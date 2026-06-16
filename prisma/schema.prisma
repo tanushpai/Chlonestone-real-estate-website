@@ -1,0 +1,104 @@
+datasource db {
+  provider = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Community {
+  id          Int       @id @default(autoincrement())
+  slug        String    @unique
+  name        String
+  tagline     String
+  image       String
+  avgPrice    String
+  rentalYield String
+  growth      String
+  popularFor  String
+  description String
+  highlights  Json      // Array of strings
+  driveTimes  Json      // Array of driveTime objects: { location, time }
+  projects    Project[]
+}
+
+model Project {
+  id                 Int        @id @default(autoincrement())
+  slug               String     @unique
+  name               String
+  developer          String
+  communityName      String
+  community          Community? @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  communityId        Int?
+  location           String
+  propertyType       String
+  startingPrice      String
+  handover           String
+  paymentPlan        String
+  image              String
+  images             Json       // Array of image URLs
+  description        String
+  reraPermit         String
+  escrowNumber       String?
+  totalUnits         String
+  coordinates        Json       // Coordinate object: { lat, lng }
+  paymentPlanDetails Json       // Array of milestones
+  unitMix            Json       // Array of unit mixes
+  amenities          Json       // Array of amenities
+  locationHighlights Json       // Array of drive times
+  developerProfile   Json       // Developer statistics
+  agent              Agent?     @relation(fields: [agentId], references: [id])
+  agentId            Int?
+  brochureUrl        String?
+  floorPlanUrl       String?
+  qrCodeUrl          String?
+}
+
+model Lead {
+  id              Int      @id @default(autoincrement())
+  name            String
+  email           String
+  phone           String?  // Optional phone number
+  password        String?  // Optional password for sign-in
+  interestType    String   // 'wishlist' | 'brochure' | 'viewing' | 'guide' | 'contact'
+  role            String?  // 'investor' | 'end-user'
+  funding         String?  // 'cash' | 'mortgage' | 'installments'
+  timeframe       String?  // 'immediate' | '3-6months' | 'exploring'
+  message         String?
+  projectName     String?  // Name of project they are interested in
+  status          String   @default("New") // 'New' | 'Contacted' | 'Viewing Scheduled' | 'Follow-up Required' | 'Closed Won' | 'Lost'
+  notes           String   @default("")
+  assignedAgent   Agent?   @relation(fields: [assignedAgentId], references: [id])
+  assignedAgentId Int?
+  createdAt       DateTime @default(now())
+  resetToken      String?
+  resetExpires    DateTime?
+}
+
+model Developer {
+  id                Int      @id @default(autoincrement())
+  slug              String   @unique
+  name              String
+  description       String
+  completedProjects Int
+  onTimeRate        String
+  logoUrl           String?
+}
+
+model Agent {
+  id       Int       @id @default(autoincrement())
+  name     String
+  email    String    @unique
+  phone    String
+  photoUrl String
+  role     String
+  projects Project[]
+  leads    Lead[]
+}
+
+model Setting {
+  id       Int    @id @default(1)
+  guideUrl String @default("/uploads/dubai-off-plan-investor-guide-2026.pdf")
+}
+
+

@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Search, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -12,13 +14,32 @@ import {
 } from "@/components/ui/select";
 
 export default function SearchBar() {
+  const router = useRouter();
+  const [query, setQuery] = useState("");
+  const [propertyType, setPropertyType] = useState("any");
+  const [priceRange, setPriceRange] = useState("any");
+
+  const handleSearch = () => {
+    const params = new URLSearchParams();
+    if (query.trim()) {
+      params.set("query", query.trim());
+    }
+    if (propertyType && propertyType !== "any") {
+      params.set("type", propertyType);
+    }
+    if (priceRange && priceRange !== "any") {
+      params.set("price", priceRange);
+    }
+    router.push(`/projects?${params.toString()}`);
+  };
+
   return (
     <div className="absolute -bottom-16 left-1/2 z-20 w-[90%] max-w-2xl -translate-x-1/2 md:-bottom-12 md:max-w-3xl">
-      <div className="rounded-2xl bg-white p-4 shadow-lg md:p-6">
+      <div className="rounded-[2rem] bg-white/95 p-4 shadow-soft ring-1 ring-border/80 md:p-6">
         
         {/* Header with tab */}
         <div className="mb-4 flex items-center gap-3">
-          <span className="rounded-full bg-black px-4 py-1.5 text-white text-xs font-semibold md:text-sm">
+          <span className="rounded-full bg-primary text-primary-foreground px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] shadow-sm">
             Off-Plan Projects
           </span>
         </div>
@@ -27,18 +48,21 @@ export default function SearchBar() {
         <div className="grid gap-2 md:gap-3 grid-cols-1 md:grid-cols-[3fr_1fr_1fr_auto]">
           
           {/* Location */}
-          <div className="flex items-center rounded-lg border border-gray-200 px-3 md:px-4">
-            <MapPin className="mr-2 h-4 w-4 text-gray-400" />
+          <div className="flex items-center gap-3 rounded-[1.25rem] border border-border bg-muted px-4 py-3">
+            <MapPin className="h-5 w-5 text-slate-400" />
             <input
               type="text"
               placeholder="City, community or project"
-              className="w-full border-none outline-none py-2.5 text-sm placeholder-gray-400"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+              className="w-full border-none bg-transparent text-sm text-foreground outline-none placeholder:text-slate-400"
             />
           </div>
 
           {/* Property Type */}
-          <Select>
-            <SelectTrigger className="h-12 rounded-lg border border-gray-200 text-sm font-medium">
+          <Select value={propertyType} onValueChange={setPropertyType}>
+            <SelectTrigger className="h-12 rounded-[1.25rem] border border-gray-200 text-sm font-medium bg-white">
                 <SelectValue placeholder="Property Type" />
             </SelectTrigger>
 
@@ -61,8 +85,8 @@ export default function SearchBar() {
          </Select>
 
           {/* Price */}
-          <Select>
-            <SelectTrigger className="h-12 rounded-lg border border-gray-200 text-sm font-medium">
+          <Select value={priceRange} onValueChange={setPriceRange}>
+            <SelectTrigger className="h-12 rounded-[1.25rem] border border-gray-200 text-sm font-medium bg-white">
               <SelectValue placeholder="Price Range" />
             </SelectTrigger>
             <SelectContent>
@@ -76,17 +100,10 @@ export default function SearchBar() {
           </Select>
 
           {/* Search Button */}
-          <Button className="h-12 rounded-lg px-8 text-sm font-medium">
+          <Button onClick={handleSearch} variant="default" className="h-12 rounded-[1.25rem] px-8 text-sm font-semibold">
             <Search className="mr-2 h-5 w-5" />
             Search
           </Button>
-        </div>
-
-        {/* Stats */}
-        <div className="mt-3 flex flex-wrap gap-4 text-xs text-gray-500 md:gap-6 md:text-sm">
-          <span>200+ Projects</span>
-          <span>50+ Communities</span>
-          <span>20+ Developers</span>
         </div>
       </div>
     </div>

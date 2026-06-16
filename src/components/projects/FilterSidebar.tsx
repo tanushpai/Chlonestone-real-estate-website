@@ -1,7 +1,8 @@
 "use client";
 
-import { Filter } from "lucide-react";
+import { Filter, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -10,110 +11,232 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-export default function FilterSidebar() {
+interface FilterSidebarProps {
+  searchQuery: string;
+  setSearchQuery: (val: string) => void;
+  community: string;
+  setCommunity: (val: string) => void;
+  propertyType: string;
+  setPropertyType: (val: string) => void;
+  developer: string;
+  setDeveloper: (val: string) => void;
+  minPrice: string;
+  setMinPrice: (val: string) => void;
+  maxPrice: string;
+  setMaxPrice: (val: string) => void;
+  handoverYear: string;
+  setHandoverYear: (val: string) => void;
+  beds: string;
+  setBeds: (val: string) => void;
+  sortBy: string;
+  setSortBy: (val: string) => void;
+  handleReset: () => void;
+}
+
+export default function FilterSidebar({
+  searchQuery,
+  setSearchQuery,
+  community,
+  setCommunity,
+  propertyType,
+  setPropertyType,
+  developer,
+  setDeveloper,
+  minPrice,
+  setMinPrice,
+  maxPrice,
+  setMaxPrice,
+  handoverYear,
+  setHandoverYear,
+  beds,
+  setBeds,
+  sortBy,
+  setSortBy,
+  handleReset,
+}: FilterSidebarProps) {
   return (
-    <div className="rounded-lg border bg-white p-4 sm:p-5 space-y-5 sm:space-y-6">
-      <div className="flex items-center gap-2 mb-4 sm:mb-6">
-        <Filter className="h-5 w-5" />
-        <h3 className="font-semibold text-lg">Filters</h3>
+    <div className="rounded-[2rem] border border-border bg-white p-5 shadow-soft space-y-6">
+      
+      {/* Header */}
+      <div className="flex items-center gap-3 border-b pb-4">
+        <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-secondary text-primary">
+          <Filter className="h-5 w-5" />
+        </div>
+        <div>
+          <p className="text-[0.65rem] font-bold uppercase tracking-widest text-slate-400">
+            Filters
+          </p>
+          <h3 className="text-base font-extrabold text-slate-900 font-heading">
+            Refine Search
+          </h3>
+        </div>
       </div>
 
-      <div className="space-y-5 sm:space-y-6">
+      <div className="space-y-5">
+        
+        {/* Keyword Search */}
+        <div className="space-y-2">
+          <label className="text-[0.65rem] font-bold uppercase tracking-wider text-slate-400">
+            Search Keyword
+          </label>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+            <Input
+              type="text"
+              placeholder="Keyword (e.g. Sobha)..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9 text-xs rounded-xl h-9 bg-slate-50 border-slate-100"
+            />
+          </div>
+        </div>
+
+        {/* Sort Order Selector */}
+        <div className="space-y-2">
+          <label className="text-[0.65rem] font-bold uppercase tracking-wider text-slate-400">
+            Sort Listings
+          </label>
+          <Select value={sortBy} onValueChange={setSortBy}>
+            <SelectTrigger className="w-full rounded-xl border-slate-100 bg-slate-50 text-xs h-9">
+              <SelectValue placeholder="Sort by default" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="default">Default Order</SelectItem>
+              <SelectItem value="price-asc">Price: Low to High</SelectItem>
+              <SelectItem value="price-desc">Price: High to Low</SelectItem>
+              <SelectItem value="handover-asc">Handover Date: Earliest</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
         {/* Community */}
-        <div>
-          <label className="block text-xs font-semibold text-gray-600 uppercase mb-2 sm:mb-3">
+        <div className="space-y-2">
+          <label className="text-[0.65rem] font-bold uppercase tracking-wider text-slate-400">
             Community
           </label>
-          <Select defaultValue="any">
-            <SelectTrigger className="w-full text-sm">
+          <Select value={community} onValueChange={setCommunity}>
+            <SelectTrigger className="w-full rounded-xl border-slate-100 bg-slate-50 text-xs h-9">
               <SelectValue placeholder="Select community" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="any">Any community</SelectItem>
-              <SelectItem value="downtown">Downtown Dubai</SelectItem>
-              <SelectItem value="marina">Marina</SelectItem>
-              <SelectItem value="jbr">JBR</SelectItem>
-              <SelectItem value="palm">Palm Jumeirah</SelectItem>
+              <SelectItem value="any">Any Community</SelectItem>
+              <SelectItem value="downtown-dubai">Downtown Dubai</SelectItem>
+              <SelectItem value="dubai-marina">Dubai Marina</SelectItem>
+              <SelectItem value="palm-jumeirah">Palm Jumeirah</SelectItem>
+              <SelectItem value="ras-al-khor">Ras Al Khor</SelectItem>
+              <SelectItem value="dubailand">Dubailand</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Developer Selector */}
+        <div className="space-y-2">
+          <label className="text-[0.65rem] font-bold uppercase tracking-wider text-slate-400">
+            Developer
+          </label>
+          <Select value={developer} onValueChange={setDeveloper}>
+            <SelectTrigger className="w-full rounded-xl border-slate-100 bg-slate-50 text-xs h-9">
+              <SelectValue placeholder="Select developer" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="any">Any Developer</SelectItem>
+              <SelectItem value="emaar">Emaar</SelectItem>
+              <SelectItem value="sobha">Sobha</SelectItem>
+              <SelectItem value="damac">DAMAC</SelectItem>
             </SelectContent>
           </Select>
         </div>
 
         {/* Property Type */}
-        <div>
-          <label className="block text-xs font-semibold text-gray-600 uppercase mb-2 sm:mb-3">
+        <div className="space-y-2">
+          <label className="text-[0.65rem] font-bold uppercase tracking-wider text-slate-400">
             Property Type
           </label>
-          <div className="grid grid-cols-2 gap-2">
-            {["Apartment", "Villa", "Penthouse", "Townhouse", "Studio", "Office"].map(
-              (type) => (
-                <button
-                  key={type}
-                  className="rounded-lg border border-gray-200 px-2 sm:px-3 py-2 text-xs sm:text-sm font-medium transition hover:border-gray-400"
-                >
-                  {type}
-                </button>
-              )
-            )}
-          </div>
+          <Select value={propertyType} onValueChange={setPropertyType}>
+            <SelectTrigger className="w-full rounded-xl border-slate-100 bg-slate-50 text-xs h-9">
+              <SelectValue placeholder="Select property type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="any">Any Property Type</SelectItem>
+              <SelectItem value="apartment">Apartment</SelectItem>
+              <SelectItem value="villa">Villa</SelectItem>
+              <SelectItem value="townhouse">Townhouse</SelectItem>
+              <SelectItem value="penthouse">Penthouse</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Bedrooms */}
-        <div>
-          <label className="block text-xs font-semibold text-gray-600 uppercase mb-2 sm:mb-3">
+        <div className="space-y-2">
+          <label className="text-[0.65rem] font-bold uppercase tracking-wider text-slate-400">
             Bedrooms
           </label>
-          <div className="flex gap-1 sm:gap-2 flex-wrap">
-            {["1+", "2+", "3+", "4+", "5+"].map((bed) => (
+          <div className="flex gap-1.5 overflow-x-auto pb-1">
+            {["any", "1+", "2+", "3+", "4+"].map((bedOption) => (
               <button
-                key={bed}
-                className="rounded-lg border border-gray-200 px-2 sm:px-3 py-2 text-xs sm:text-sm font-medium transition hover:border-gray-400"
+                key={bedOption}
+                onClick={() => setBeds(bedOption)}
+                className={`rounded-lg border px-3 py-1.5 text-xs font-semibold uppercase tracking-wider transition ${
+                  beds === bedOption
+                    ? "bg-primary text-white border-primary"
+                    : "bg-slate-50 border-slate-100 text-slate-600 hover:border-slate-300"
+                }`}
               >
-                {bed}
+                {bedOption === "any" ? "Any" : bedOption}
               </button>
             ))}
           </div>
         </div>
 
-        {/* Bathrooms */}
-        <div>
-          <label className="block text-xs font-semibold text-gray-600 uppercase mb-2 sm:mb-3">
-            Bathrooms
+        {/* Handover Year Timeline */}
+        <div className="space-y-2">
+          <label className="text-[0.65rem] font-bold uppercase tracking-wider text-slate-400">
+            Handover Year
           </label>
-          <div className="flex gap-1 sm:gap-2 flex-wrap">
-            {["1+", "2+", "3+", "4+"].map((bath) => (
-              <button
-                key={bath}
-                className="rounded-lg border border-gray-200 px-2 sm:px-3 py-2 text-xs sm:text-sm font-medium transition hover:border-gray-400"
-              >
-                {bath}
-              </button>
-            ))}
-          </div>
+          <Select value={handoverYear} onValueChange={setHandoverYear}>
+            <SelectTrigger className="w-full rounded-xl border-slate-100 bg-slate-50 text-xs h-9">
+              <SelectValue placeholder="Select handover year" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="any">Any Year</SelectItem>
+              <SelectItem value="2027">2027</SelectItem>
+              <SelectItem value="2028">2028</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Price Range */}
-        <div>
-          <label className="block text-xs font-semibold text-gray-600 uppercase mb-2 sm:mb-3">
+        <div className="space-y-2">
+          <label className="text-[0.65rem] font-bold uppercase tracking-wider text-slate-400">
             Price Range (AED)
           </label>
-          <div className="space-y-2">
-            <input
-              type="text"
-              placeholder="Min"
-              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
+          <div className="grid grid-cols-2 gap-2">
+            <Input
+              type="number"
+              placeholder="Min Price"
+              value={minPrice}
+              onChange={(e) => setMinPrice(e.target.value)}
+              className="text-xs rounded-xl h-9 bg-slate-50 border-slate-100"
             />
-            <input
-              type="text"
-              placeholder="Max"
-              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
+            <Input
+              type="number"
+              placeholder="Max Price"
+              value={maxPrice}
+              onChange={(e) => setMaxPrice(e.target.value)}
+              className="text-xs rounded-xl h-9 bg-slate-50 border-slate-100"
             />
           </div>
         </div>
 
-        {/* Reset Button */}
-        <Button variant="outline" className="w-full text-sm">
-          Reset filters
+        {/* Action button */}
+        <Button
+          onClick={handleReset}
+          variant="outline"
+          className="w-full text-xs rounded-xl border-slate-200 hover:bg-slate-50 h-9 font-semibold text-slate-600 bg-white"
+        >
+          Reset Filters
         </Button>
+
       </div>
     </div>
   );

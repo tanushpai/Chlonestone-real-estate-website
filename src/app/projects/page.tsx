@@ -1,43 +1,180 @@
 "use client";
 
-import { useState } from "react";
-import { Filter } from "lucide-react";
+import { useState, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
+import { Filter, RotateCcw } from "lucide-react";
 import Navbar from "@/components/layout/Navbar";
 import FilterSidebar from "@/components/projects/FilterSidebar";
 import ProjectGrid from "@/components/projects/ProjectGrid";
-import ViewSwitcher from "@/components/projects/ViewSwitcher";
-import ProjectMap from "@/components/projects/ProjectMap";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
   SheetContent,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import { getProjects } from "@/lib/dataService";
+import { Project } from "@/data/projects";
 
-export default function ProjectsPage() {
-  const [view, setView] = useState<"grid" | "map">("grid");
+function ProjectsPageContent() {
+  const searchParams = useSearchParams();
   const [showFilters, setShowFilters] = useState(false);
+  const [allProjects, setAllProjects] = useState<Project[]>([]);
+  
+  // Filter States
+  const [searchQuery, setSearchQuery] = useState("");
+  const [community, setCommunity] = useState("any");
+  const [propertyType, setPropertyType] = useState("any");
+  const [developer, setDeveloper] = useState("any");
+  const [minPrice, setMinPrice] = useState("");
+  const [maxPrice, setMaxPrice] = useState("");
+  const [handoverYear, setHandoverYear] = useState("any");
+  const [beds, setBeds] = useState("any");
+  const [sortBy, setSortBy] = useState("default");
+
+  // Load projects from dataService on mount
+  useEffect(() => {
+    getProjects().then((all) => {
+      setAllProjects(all);
+    });
+  }, []);
+
+  // Sync URL search params to states
+  useEffect(() => {
+    const q = searchParams.get("query");
+    const t = searchParams.get("type");
+    const p = searchParams.get("price");
+
+    if (q) setSearchQuery(q);
+    if (t) setPropertyType(t);
+    if (p) {
+      if (p === "under-1m") {
+        setMinPrice("");
+        setMaxPrice("1000000");
+      } else if (p === "1m-2m") {
+        setMinPrice("1000000");
+        setMaxPrice("2000000");
+      } else if (p === "2m-5m") {
+        setMinPrice("2000000");
+        setMaxPrice("5000000");
+      } else if (p === "5m-10m") {
+        setMinPrice("5000000");
+        setMaxPrice("10000000");
+      } else if (p === "10m-plus") {
+        setMinPrice("10000000");
+        setMaxPrice("");
+      }
+    }
+  }, [searchParams]);
+
+  // Filter & Sort Logic
+  const filteredProjects = allProjects.filter((project) => {
+    // 1. Keyword search (Name, developer, community)
+    const matchesSearch = 
+      project.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      project.developer.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (project.communityName || project.community || "").toLowerCase().includes(searchQuery.toLowerCase());
+
+    // 2. Community
+    const matchesCommunity = 
+      community === "any" || 
+      (project.communityName || project.community || "").toLowerCase().includes(community.toLowerCase());
+
+    // 3. Property Type
+    const matchesType = 
+      propertyType === "any" || 
+      project.propertyType.toLowerCase() === propertyType.toLowerCase();
+
+    // 4. Developer
+    const matchesDeveloper = 
+      developer === "any" || 
+      project.developer.toLowerCase() === developer.toLowerCase();
+
+    // 5. Handover Year
+    const matchesHandover = 
+      handoverYear === "any" || 
+      project.handover.includes(handoverYear);
+
+    // 6. Beds filter (1+, 2+, 3+, 4+)
+    let matchesBeds = true;
+    if (beds !== "any") {
+      const minBedsReq = parseInt(beds.replace("+", ""), 10);
+      // Check if project has units matching minimum bedrooms required
+      matchesBeds = project.unitMix.some((mix) => {
+        const mixBeds = parseInt(mix.beds.replace(/[^0-9]/g, ""), 10);
+        return !isNaN(mixBeds) && mixBeds >= minBedsReq;
+      });
+    }
+
+    // 7. Price limits (Parse startingPrice e.g. "AED 2.5M" -> 2500000)
+    const parsePrice = (priceStr: string) => {
+      const clean = priceStr.replace(/[^0-9.]/g, "");
+      const num = parseFloat(clean);
+      if (priceStr.includes("M")) return num * 1000000;
+      if (priceStr.includes("K")) return num * 1000;
+      return num;
+    };
+
+    const projectPriceVal = parsePrice(project.startingPrice);
+    const minPriceLimit = minPrice ? parseFloat(minPrice) : 0;
+    const maxPriceLimit = maxPrice ? parseFloat(maxPrice) : Infinity;
+    const matchesPrice = projectPriceVal >= minPriceLimit && projectPriceVal <= maxPriceLimit;
+
+    return matchesSearch && matchesCommunity && matchesType && matchesDeveloper && matchesHandover && matchesBeds && matchesPrice;
+  });
+
+  // Sort
+  const sortedProjects = [...filteredProjects].sort((a, b) => {
+    const parsePrice = (priceStr: string) => {
+      const clean = priceStr.replace(/[^0-9.]/g, "");
+      const num = parseFloat(clean);
+      if (priceStr.includes("M")) return num * 1000000;
+      return num;
+    };
+
+    if (sortBy === "price-asc") {
+      return parsePrice(a.startingPrice) - parsePrice(b.startingPrice);
+    }
+    if (sortBy === "price-desc") {
+      return parsePrice(b.startingPrice) - parsePrice(a.startingPrice);
+    }
+    if (sortBy === "handover-asc") {
+      return a.handover.localeCompare(b.handover);
+    }
+    return 0; // default order
+  });
+
+  const handleResetFilters = () => {
+    setSearchQuery("");
+    setCommunity("any");
+    setPropertyType("any");
+    setDeveloper("any");
+    setMinPrice("");
+    setMaxPrice("");
+    setHandoverYear("any");
+    setBeds("any");
+    setSortBy("default");
+  };
 
   return (
     <>
       <Navbar />
 
-      <main className="pt-24 pb-16 lg:pt-32">
+      <main className="pt-24 pb-16 lg:pt-32 bg-slate-50/50 min-h-screen">
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
 
           {/* Header Section */}
           <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between lg:mb-8">
             <div className="flex-1">
-              <h1 className="text-3xl font-bold sm:text-4xl">
-                Off-plan projects in Dubai
+              <h1 className="text-3xl font-extrabold sm:text-4xl text-slate-900 font-heading">
+                Off-Plan Projects in Dubai
               </h1>
 
-              <p className="mt-2 text-sm text-gray-500 sm:text-base">
+              <p className="mt-2 text-sm text-slate-500 sm:text-base">
                 New launches from leading developers — flexible payment plans, projected ROI and handover timelines.
               </p>
 
-              <p className="mt-2 text-xs text-gray-400">
-                0 LISTINGS
+              <p className="mt-2 text-xs font-bold text-primary tracking-wider uppercase">
+                {sortedProjects.length} LISTINGS FOUND
               </p>
             </div>
 
@@ -48,19 +185,36 @@ export default function ProjectsPage() {
                   <Button 
                     variant="outline" 
                     size="sm" 
-                    className="gap-2 lg:hidden"
+                    className="gap-2 lg:hidden bg-white"
                   >
-                    <Filter className="h-4 w-4" />
+                    <Filter className="h-4 w-4 text-slate-600" />
                     Filters
                   </Button>
                 </SheetTrigger>
-                <SheetContent side="left" className="w-80">
-                  <FilterSidebar />
+                <SheetContent side="left" className="w-80 overflow-y-auto">
+                  <FilterSidebar
+                    searchQuery={searchQuery}
+                    setSearchQuery={setSearchQuery}
+                    community={community}
+                    setCommunity={setCommunity}
+                    propertyType={propertyType}
+                    setPropertyType={setPropertyType}
+                    developer={developer}
+                    setDeveloper={setDeveloper}
+                    minPrice={minPrice}
+                    setMinPrice={setMinPrice}
+                    maxPrice={maxPrice}
+                    setMaxPrice={setMaxPrice}
+                    handoverYear={handoverYear}
+                    setHandoverYear={setHandoverYear}
+                    beds={beds}
+                    setBeds={setBeds}
+                    sortBy={sortBy}
+                    setSortBy={setSortBy}
+                    handleReset={handleResetFilters}
+                  />
                 </SheetContent>
               </Sheet>
-
-              {/* View Switcher */}
-              <ViewSwitcher view={view} setView={setView} />
             </div>
           </div>
 
@@ -68,28 +222,68 @@ export default function ProjectsPage() {
           <div className="flex gap-4 lg:gap-6">
             {/* Desktop Sidebar - Hidden on mobile */}
             <div className="hidden w-80 flex-shrink-0 lg:block">
-              <FilterSidebar />
+              <FilterSidebar
+                searchQuery={searchQuery}
+                setSearchQuery={setSearchQuery}
+                community={community}
+                setCommunity={setCommunity}
+                propertyType={propertyType}
+                setPropertyType={setPropertyType}
+                developer={developer}
+                setDeveloper={setDeveloper}
+                minPrice={minPrice}
+                setMinPrice={setMinPrice}
+                maxPrice={maxPrice}
+                setMaxPrice={setMaxPrice}
+                handoverYear={handoverYear}
+                setHandoverYear={setHandoverYear}
+                beds={beds}
+                setBeds={setBeds}
+                sortBy={sortBy}
+                setSortBy={setSortBy}
+                handleReset={handleResetFilters}
+              />
             </div>
 
             {/* Content Area */}
             <div className="w-full flex-1">
-              {/* Grid View: Grid Only */}
-              {view === "grid" && (
-                <div>
-                  <ProjectGrid />
+              {/* Reset filter notification bar if filtered results is empty */}
+              {sortedProjects.length === 0 && (
+                <div className="rounded-3xl border bg-white p-12 flex flex-col items-center justify-center text-center space-y-4">
+                  <RotateCcw className="h-10 w-10 text-slate-300 animate-spin duration-1000" />
+                  <h3 className="text-xl font-bold text-slate-900">No Listings Match Filters</h3>
+                  <p className="text-sm text-slate-500 max-w-sm">Try widening your price limits or resetting parameters to see more listings.</p>
+                  <Button onClick={handleResetFilters} variant="default" className="rounded-xl px-6">
+                    Reset All Filters
+                  </Button>
                 </div>
               )}
 
-              {/* Map View: Map Only */}
-              {view === "map" && (
-                <div>
-                  <ProjectMap />
-                </div>
+              {/* Grid View */}
+              {sortedProjects.length > 0 && (
+                <ProjectGrid projects={sortedProjects} />
               )}
             </div>
           </div>
         </div>
       </main>
     </>
+  );
+}
+
+export default function ProjectsPage() {
+  return (
+    <Suspense fallback={
+      <>
+        <Navbar />
+        <main className="pt-24 pb-16 lg:pt-32 bg-slate-50/50 min-h-screen flex items-center justify-center">
+          <div className="text-slate-450 text-sm font-semibold uppercase tracking-wider animate-pulse">
+            Loading Listings...
+          </div>
+        </main>
+      </>
+    }>
+      <ProjectsPageContent />
+    </Suspense>
   );
 }

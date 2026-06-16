@@ -1,0 +1,9 @@
+import { NextResponse } from "next/server";
+
+export async function PUT() {
+  return new NextResponse("Not Found", { status: 404 });
+}
+
+export async function DELETE() {
+  return new NextResponse("Not Found", { status: 404 });
+}
