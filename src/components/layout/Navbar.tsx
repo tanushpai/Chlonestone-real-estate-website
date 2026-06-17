@@ -151,14 +151,14 @@ export default function Navbar() {
                     </div>
 
                     <div className="py-1">
-                      {user.role === "admin" && (
+                      {(user.role === "admin" || user.role === "agent") && (
                         <Link 
                           href="/crm" 
                           onClick={() => setShowDropdown(false)}
                           className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold text-slate-700 hover:bg-slate-50 transition"
                         >
                           <LayoutDashboard className="h-3.5 w-3.5 text-slate-500" />
-                          CRM Dashboard
+                          {user.role === "admin" ? "CRM Dashboard" : "Agent Portal"}
                         </Link>
                       )}
                       
@@ -219,10 +219,10 @@ export default function Navbar() {
 
                 {user ? (
                   <div className="flex flex-col gap-3 mt-4 border-t pt-4">
-                    {user.role === "admin" && (
+                    {(user.role === "admin" || user.role === "agent") && (
                       <Link href="/crm" className="w-full">
                         <Button className="w-full bg-[#111322] text-white">
-                          Admin Portal
+                          {user.role === "admin" ? "Admin Portal" : "Agent Portal"}
                         </Button>
                       </Link>
                     )}

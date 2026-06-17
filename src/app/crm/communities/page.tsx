@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { CheckCircle, Save, Percent, MapPin, Plus, Trash2, X, Upload } from "lucide-react";
+import { CheckCircle, Save, Percent, MapPin, Plus, Trash2, X, Upload, ChevronLeft, ChevronRight } from "lucide-react";
 import { getCommunities, saveCommunity, deleteCommunity } from "@/lib/dataService";
 import { Community } from "@/data/communities";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,8 @@ export default function CrmCommunitiesPage() {
   const [communitiesList, setCommunitiesList] = useState<Community[]>([]);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [isCreating, setIsCreating] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const commsPerPage = 10;
   
   // Edited/created values state
   const [name, setName] = useState("");
@@ -443,7 +445,7 @@ export default function CrmCommunitiesPage() {
 
       {/* Grid of Community Editors */}
       <div className="grid gap-6 grid-cols-1">
-        {communitiesList.map((c) => {
+        {communitiesList.slice((currentPage - 1) * commsPerPage, currentPage * commsPerPage).map((c) => {
           const isEditing = editingId === c.id;
           return (
             <div 
@@ -735,6 +737,49 @@ export default function CrmCommunitiesPage() {
         })}
       </div>
 
+      {/* Pagination Controls */}
+      {Math.ceil(communitiesList.length / commsPerPage) > 1 && (
+        <div className="mt-8 flex flex-col sm:flex-row items-center justify-between gap-4 border-t pt-6">
+          <p className="text-xs text-slate-500 font-medium">
+            Showing <span className="font-semibold text-slate-800">{Math.min((currentPage - 1) * commsPerPage + 1, communitiesList.length)}</span> to{" "}
+            <span className="font-semibold text-slate-800">{Math.min(currentPage * commsPerPage, communitiesList.length)}</span> of{" "}
+            <span className="font-semibold text-slate-800">{communitiesList.length}</span> communities
+          </p>
+          <div className="flex items-center gap-1.5">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="h-9 w-9 p-0 rounded-xl bg-white"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            {Array.from({ length: Math.ceil(communitiesList.length / commsPerPage) }, (_, i) => i + 1).map((page) => (
+              <Button
+                key={page}
+                variant={currentPage === page ? "default" : "outline"}
+                size="sm"
+                onClick={() => setCurrentPage(page)}
+                className={`h-9 w-9 p-0 rounded-xl font-bold ${
+                  currentPage === page ? "bg-slate-900 text-white" : "bg-white"
+                }`}
+              >
+                {page}
+              </Button>
+            ))}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage((p) => Math.min(Math.ceil(communitiesList.length / commsPerPage), p + 1))}
+              disabled={currentPage === Math.ceil(communitiesList.length / commsPerPage)}
+              className="h-9 w-9 p-0 rounded-xl bg-white"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -11,7 +11,8 @@ import {
   LogOut, 
   UserCircle,
   Users,
-  UserCheck
+  UserCheck,
+  Mail
 } from "lucide-react";
 
 export default function CrmLayout({
@@ -28,7 +29,7 @@ export default function CrmLayout({
     const stored = localStorage.getItem("chlonestone_user");
     if (stored) {
       const u = JSON.parse(stored);
-      if (u.role === "admin" && u.email === "admin@chlonestone.com") {
+      if (u.role === "admin" || u.role === "agent") {
         setAuthorized(true);
         setAdminUser(u);
         return;
@@ -41,7 +42,7 @@ export default function CrmLayout({
     return (
       <div className="h-screen w-screen bg-[#0F1123] flex flex-col items-center justify-center text-xs text-slate-400 gap-4">
         <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
-        <p className="font-semibold tracking-wider uppercase">Verifying Admin Access...</p>
+        <p className="font-semibold tracking-wider uppercase">Verifying CRM Access...</p>
       </div>
     );
   }
@@ -52,8 +53,17 @@ export default function CrmLayout({
     { name: "Projects Manager", href: "/crm/projects", icon: Building2 },
     { name: "Communities Manager", href: "/crm/communities", icon: Map },
     { name: "Developers Manager", href: "/crm/developers", icon: Building2 },
+    { name: "Subscribers Manager", href: "/crm/subscribers", icon: Mail },
     { name: "Agents Manager", href: "/crm/agents", icon: UserCheck },
   ];
+
+  // Filter Agent & Subscriber Manager out for non-admins
+  const filteredMenuItems = menuItems.filter((item) => {
+    if ((item.name === "Agents Manager" || item.name === "Subscribers Manager") && adminUser?.role !== "admin") {
+      return false;
+    }
+    return true;
+  });
 
   return (
     <div className="flex h-screen bg-slate-100 overflow-hidden text-slate-800">
@@ -81,7 +91,7 @@ export default function CrmLayout({
 
         {/* Sidebar Navigation */}
         <nav className="flex-1 px-4 py-6 space-y-1">
-          {menuItems.map((item) => {
+          {filteredMenuItems.map((item) => {
             const isActive = pathname === item.href;
             return (
               <Link
@@ -116,7 +126,7 @@ export default function CrmLayout({
       {/* Main CRM Workspace Area */}
       <div className="flex-1 flex flex-col overflow-hidden">
         
-        {/* Workspace Top Header Header */}
+        {/* Workspace Top Header */}
         <header className="h-20 border-b bg-white flex items-center justify-between px-6 md:px-8 flex-shrink-0">
           <div className="flex items-center gap-3">
             <Link href="/" className="md:hidden">
@@ -129,7 +139,7 @@ export default function CrmLayout({
               />
             </Link>
             <h2 className="hidden md:block text-lg font-bold text-slate-950 font-heading">
-              Agent Portal
+              {adminUser?.role === "admin" ? "Admin CRM Portal" : "Agent CRM Portal"}
             </h2>
           </div>
 
@@ -138,7 +148,7 @@ export default function CrmLayout({
             {/* Quick Link Switcher */}
             <div className="flex items-center gap-2 rounded-full border bg-slate-50 px-3 py-1.5 text-xs text-slate-600 font-semibold shadow-sm">
               <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="capitalize">Role: {adminUser?.role || "Admin"}</span>
+              <span className="capitalize">Role: {adminUser?.role || "Agent"}</span>
             </div>
 
             {/* Profile Avatar */}
@@ -146,7 +156,7 @@ export default function CrmLayout({
               <div className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-900 text-[10px] font-bold text-white uppercase select-none">
                 {adminUser?.email.charAt(0) || "A"}
               </div>
-              <span className="hidden sm:inline-block text-xs font-bold text-slate-700">{adminUser?.name || "Admin"}</span>
+              <span className="hidden sm:inline-block text-xs font-bold text-slate-700">{adminUser?.name || "User"}</span>
             </div>
           </div>
         </header>

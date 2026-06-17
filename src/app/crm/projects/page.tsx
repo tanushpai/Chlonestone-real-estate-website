@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Plus, Edit2, Trash2, Globe, EyeOff, CheckCircle } from "lucide-react";
+import { Plus, Edit2, Trash2, Globe, EyeOff, CheckCircle, ChevronLeft, ChevronRight } from "lucide-react";
 import { getProjects, saveProject, deleteProject } from "@/lib/dataService";
 import { Project } from "@/data/projects";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,8 @@ import { Button } from "@/components/ui/button";
 export default function CrmProjectsPage() {
   const [projectsList, setProjectsList] = useState<Project[]>([]);
   const [successMsg, setSuccessMsg] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const projectsPerPage = 10;
 
   const loadData = () => {
     getProjects().then((all) => {
@@ -84,7 +86,7 @@ export default function CrmProjectsPage() {
               </tr>
             </thead>
             <tbody className="divide-y">
-              {projectsList.map((p) => (
+              {projectsList.slice((currentPage - 1) * projectsPerPage, currentPage * projectsPerPage).map((p) => (
                 <tr key={p.id} className="hover:bg-slate-50/50 transition">
                   
                   {/* Image */}
@@ -152,6 +154,50 @@ export default function CrmProjectsPage() {
             </tbody>
           </table>
         </div>
+
+        {/* Pagination Controls */}
+        {Math.ceil(projectsList.length / projectsPerPage) > 1 && (
+          <div className="p-4 border-t flex flex-col sm:flex-row items-center justify-between gap-4 bg-slate-50/50">
+            <p className="text-[11px] text-slate-500 font-medium">
+              Showing <span className="font-semibold text-slate-800">{Math.min((currentPage - 1) * projectsPerPage + 1, projectsList.length)}</span> to{" "}
+              <span className="font-semibold text-slate-800">{Math.min(currentPage * projectsPerPage, projectsList.length)}</span> of{" "}
+              <span className="font-semibold text-slate-800">{projectsList.length}</span> projects
+            </p>
+            <div className="flex items-center gap-1">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="h-7 w-7 p-0 rounded-lg bg-white"
+              >
+                <ChevronLeft className="h-3.5 w-3.5" />
+              </Button>
+              {Array.from({ length: Math.ceil(projectsList.length / projectsPerPage) }, (_, i) => i + 1).map((page) => (
+                <Button
+                  key={page}
+                  variant={currentPage === page ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setCurrentPage(page)}
+                  className={`h-7 w-7 p-0 rounded-lg font-bold text-[11px] ${
+                    currentPage === page ? "bg-slate-900 text-white" : "bg-white"
+                  }`}
+                >
+                  {page}
+                </Button>
+              ))}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage((p) => Math.min(Math.ceil(projectsList.length / projectsPerPage), p + 1))}
+                disabled={currentPage === Math.ceil(projectsList.length / projectsPerPage)}
+                className="h-7 w-7 p-0 rounded-lg bg-white"
+              >
+                <ChevronRight className="h-3.5 w-3.5" />
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
 
     </div>

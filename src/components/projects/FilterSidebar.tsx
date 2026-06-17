@@ -31,6 +31,18 @@ interface FilterSidebarProps {
   sortBy: string;
   setSortBy: (val: string) => void;
   handleReset: () => void;
+  
+  paymentPlan: string;
+  setPaymentPlan: (val: string) => void;
+  selectedAmenities: string[];
+  setSelectedAmenities: (val: string[]) => void;
+  
+  communitiesList: string[];
+  developersList: string[];
+  propertyTypesList: string[];
+  handoverTimelineOptions: string[];
+  paymentPlanOptions: string[];
+  allAmenitiesList: string[];
 }
 
 export default function FilterSidebar({
@@ -53,6 +65,17 @@ export default function FilterSidebar({
   sortBy,
   setSortBy,
   handleReset,
+  
+  paymentPlan,
+  setPaymentPlan,
+  selectedAmenities,
+  setSelectedAmenities,
+  communitiesList,
+  developersList,
+  propertyTypesList,
+  handoverTimelineOptions,
+  paymentPlanOptions,
+  allAmenitiesList,
 }: FilterSidebarProps) {
   return (
     <div className="rounded-[2rem] border border-border bg-white p-5 shadow-soft space-y-6">
@@ -77,13 +100,13 @@ export default function FilterSidebar({
         {/* Keyword Search */}
         <div className="space-y-2">
           <label className="text-[0.65rem] font-bold uppercase tracking-wider text-slate-400">
-            Search Keyword
+            Search Keyword / Address
           </label>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
             <Input
               type="text"
-              placeholder="Keyword (e.g. Sobha)..."
+              placeholder="Search name, developer, address..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-9 text-xs rounded-xl h-9 bg-slate-50 border-slate-100"
@@ -120,11 +143,9 @@ export default function FilterSidebar({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="any">Any Community</SelectItem>
-              <SelectItem value="downtown-dubai">Downtown Dubai</SelectItem>
-              <SelectItem value="dubai-marina">Dubai Marina</SelectItem>
-              <SelectItem value="palm-jumeirah">Palm Jumeirah</SelectItem>
-              <SelectItem value="ras-al-khor">Ras Al Khor</SelectItem>
-              <SelectItem value="dubailand">Dubailand</SelectItem>
+              {communitiesList.map((c) => (
+                <SelectItem key={c} value={c}>{c}</SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
@@ -140,9 +161,9 @@ export default function FilterSidebar({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="any">Any Developer</SelectItem>
-              <SelectItem value="emaar">Emaar</SelectItem>
-              <SelectItem value="sobha">Sobha</SelectItem>
-              <SelectItem value="damac">DAMAC</SelectItem>
+              {developersList.map((d) => (
+                <SelectItem key={d} value={d}>{d}</SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
@@ -158,10 +179,27 @@ export default function FilterSidebar({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="any">Any Property Type</SelectItem>
-              <SelectItem value="apartment">Apartment</SelectItem>
-              <SelectItem value="villa">Villa</SelectItem>
-              <SelectItem value="townhouse">Townhouse</SelectItem>
-              <SelectItem value="penthouse">Penthouse</SelectItem>
+              {propertyTypesList.map((t) => (
+                <SelectItem key={t} value={t}>{t}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Payment Plan */}
+        <div className="space-y-2">
+          <label className="text-[0.65rem] font-bold uppercase tracking-wider text-slate-400">
+            Payment Plan
+          </label>
+          <Select value={paymentPlan} onValueChange={setPaymentPlan}>
+            <SelectTrigger className="w-full rounded-xl border-slate-100 bg-slate-50 text-xs h-9">
+              <SelectValue placeholder="Select payment plan" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="any">Any Payment Plan</SelectItem>
+              {paymentPlanOptions.map((p) => (
+                <SelectItem key={p} value={p}>{p} Structure</SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
@@ -175,11 +213,12 @@ export default function FilterSidebar({
             {["any", "1+", "2+", "3+", "4+"].map((bedOption) => (
               <button
                 key={bedOption}
+                type="button"
                 onClick={() => setBeds(bedOption)}
                 className={`rounded-lg border px-3 py-1.5 text-xs font-semibold uppercase tracking-wider transition ${
                   beds === bedOption
                     ? "bg-primary text-white border-primary"
-                    : "bg-slate-50 border-slate-100 text-slate-600 hover:border-slate-300"
+                    : "bg-slate-50 border-slate-100 text-slate-600 hover:border-slate-350"
                 }`}
               >
                 {bedOption === "any" ? "Any" : bedOption}
@@ -191,16 +230,17 @@ export default function FilterSidebar({
         {/* Handover Year Timeline */}
         <div className="space-y-2">
           <label className="text-[0.65rem] font-bold uppercase tracking-wider text-slate-400">
-            Handover Year
+            Estimated Handover
           </label>
           <Select value={handoverYear} onValueChange={setHandoverYear}>
             <SelectTrigger className="w-full rounded-xl border-slate-100 bg-slate-50 text-xs h-9">
-              <SelectValue placeholder="Select handover year" />
+              <SelectValue placeholder="Select handover timeline" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="any">Any Year</SelectItem>
-              <SelectItem value="2027">2027</SelectItem>
-              <SelectItem value="2028">2028</SelectItem>
+              <SelectItem value="any">Any Timeline</SelectItem>
+              {handoverTimelineOptions.map((h) => (
+                <SelectItem key={h} value={h}>{h}</SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
@@ -228,7 +268,41 @@ export default function FilterSidebar({
           </div>
         </div>
 
-        {/* Action button */}
+        {/* Amenities Selection Toggle Tags */}
+        {allAmenitiesList.length > 0 && (
+          <div className="space-y-2">
+            <label className="text-[0.65rem] font-bold uppercase tracking-wider text-slate-400">
+              Amenities Included
+            </label>
+            <div className="flex flex-wrap gap-1.5 max-h-36 overflow-y-auto pb-1">
+              {allAmenitiesList.map((amenity) => {
+                const isSelected = selectedAmenities.includes(amenity);
+                return (
+                  <button
+                    key={amenity}
+                    type="button"
+                    onClick={() => {
+                      if (isSelected) {
+                        setSelectedAmenities(selectedAmenities.filter((a) => a !== amenity));
+                      } else {
+                        setSelectedAmenities([...selectedAmenities, amenity]);
+                      }
+                    }}
+                    className={`rounded-lg border px-2.5 py-1 text-[10px] font-semibold transition ${
+                      isSelected
+                        ? "bg-primary text-white border-primary"
+                        : "bg-slate-50 border-slate-100 text-slate-650 hover:border-slate-350"
+                    }`}
+                  >
+                    {amenity}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Reset button */}
         <Button
           onClick={handleReset}
           variant="outline"

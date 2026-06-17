@@ -32,6 +32,7 @@ export default function CrmEditProjectPage({
   const [description, setDescription] = useState("");
   const [thumbnailImage, setThumbnailImage] = useState("");
   const [imagesList, setImagesList] = useState<string[]>([]);
+  const [address, setAddress] = useState("");
   const [newImageUrl, setNewImageUrl] = useState("");
   const [isSuccess, setIsSuccess] = useState(false);
 
@@ -162,6 +163,7 @@ export default function CrmEditProjectPage({
         setDescription(project.description);
         setThumbnailImage(project.image);
         setImagesList((project.images as string[]) || []);
+        setAddress(project.address || "");
         setBrochureUrl((project as any).brochureUrl || "");
         setFloorPlanUrl((project as any).floorPlanUrl || "");
         setQrCodeUrl((project as any).qrCodeUrl || "");
@@ -331,6 +333,7 @@ export default function CrmEditProjectPage({
       escrowNumber: escrowNumber || null,
       reraPermit,
       description,
+      address: address || null,
       image: thumbnailImage || "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00",
       images: imagesList,
       coordinates: { lat: 25.1972, lng: 55.2744 },
@@ -415,6 +418,16 @@ export default function CrmEditProjectPage({
                 onChange={(e) => setStartingPrice(e.target.value)}
               />
             </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-slate-700">Property Address</label>
+            <Input
+              type="text"
+              placeholder="e.g. Crescent Road, Palm Jumeirah, Dubai"
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+            />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">

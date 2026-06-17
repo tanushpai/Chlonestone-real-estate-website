@@ -2,7 +2,7 @@
 
 import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { Filter, RotateCcw } from "lucide-react";
+import { Filter, RotateCcw, ChevronLeft, ChevronRight } from "lucide-react";
 import Navbar from "@/components/layout/Navbar";
 import FilterSidebar from "@/components/projects/FilterSidebar";
 import ProjectGrid from "@/components/projects/ProjectGrid";
@@ -30,6 +30,15 @@ function ProjectsPageContent() {
   const [handoverYear, setHandoverYear] = useState("any");
   const [beds, setBeds] = useState("any");
   const [sortBy, setSortBy] = useState("default");
+  const [paymentPlan, setPaymentPlan] = useState("any");
+  const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const projectsPerPage = 10;
+
+  // Reset to page 1 on filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, community, propertyType, developer, minPrice, maxPrice, handoverYear, beds, paymentPlan, selectedAmenities]);
 
   // Load projects from dataService on mount
   useEffect(() => {
@@ -89,10 +98,10 @@ function ProjectsPageContent() {
       developer === "any" || 
       project.developer.toLowerCase() === developer.toLowerCase();
 
-    // 5. Handover Year
+    // 5. Handover Year / Timeline (Dynamic)
     const matchesHandover = 
       handoverYear === "any" || 
-      project.handover.includes(handoverYear);
+      project.handover.toLowerCase() === handoverYear.toLowerCase();
 
     // 6. Beds filter (1+, 2+, 3+, 4+)
     let matchesBeds = true;
@@ -119,7 +128,22 @@ function ProjectsPageContent() {
     const maxPriceLimit = maxPrice ? parseFloat(maxPrice) : Infinity;
     const matchesPrice = projectPriceVal >= minPriceLimit && projectPriceVal <= maxPriceLimit;
 
-    return matchesSearch && matchesCommunity && matchesType && matchesDeveloper && matchesHandover && matchesBeds && matchesPrice;
+    // 8. Payment Plan
+    const matchesPaymentPlan = 
+      paymentPlan === "any" || 
+      project.paymentPlan === paymentPlan;
+
+    // 9. Amenities
+    const matchesAmenities = 
+      selectedAmenities.length === 0 || 
+      selectedAmenities.every(amenity => 
+        project.amenities.some(a => a.toLowerCase() === amenity.toLowerCase())
+      );
+
+    // Keyword search includes address matches
+    const matchesSearchWithAddress = matchesSearch || (project.address || "").toLowerCase().includes(searchQuery.toLowerCase());
+
+    return matchesSearchWithAddress && matchesCommunity && matchesType && matchesDeveloper && matchesHandover && matchesBeds && matchesPrice && matchesPaymentPlan && matchesAmenities;
   });
 
   // Sort
@@ -153,7 +177,17 @@ function ProjectsPageContent() {
     setHandoverYear("any");
     setBeds("any");
     setSortBy("default");
+    setPaymentPlan("any");
+    setSelectedAmenities([]);
   };
+
+  // Dynamic Options
+  const communitiesList = Array.from(new Set(allProjects.map(p => p.communityName || p.community || ""))).filter(Boolean).sort();
+  const developersList = Array.from(new Set(allProjects.map(p => p.developer))).filter(Boolean).sort();
+  const propertyTypesList = Array.from(new Set(allProjects.map(p => p.propertyType))).filter(Boolean).sort();
+  const handoverTimelineOptions = Array.from(new Set(allProjects.map(p => p.handover))).filter(Boolean).sort();
+  const paymentPlanOptions = Array.from(new Set(allProjects.map(p => p.paymentPlan))).filter(Boolean).sort();
+  const allAmenitiesList = Array.from(new Set(allProjects.flatMap(p => p.amenities))).filter(Boolean).sort();
 
   return (
     <>
@@ -212,6 +246,16 @@ function ProjectsPageContent() {
                     sortBy={sortBy}
                     setSortBy={setSortBy}
                     handleReset={handleResetFilters}
+                    paymentPlan={paymentPlan}
+                    setPaymentPlan={setPaymentPlan}
+                    selectedAmenities={selectedAmenities}
+                    setSelectedAmenities={setSelectedAmenities}
+                    communitiesList={communitiesList}
+                    developersList={developersList}
+                    propertyTypesList={propertyTypesList}
+                    handoverTimelineOptions={handoverTimelineOptions}
+                    paymentPlanOptions={paymentPlanOptions}
+                    allAmenitiesList={allAmenitiesList}
                   />
                 </SheetContent>
               </Sheet>
@@ -242,6 +286,16 @@ function ProjectsPageContent() {
                 sortBy={sortBy}
                 setSortBy={setSortBy}
                 handleReset={handleResetFilters}
+                paymentPlan={paymentPlan}
+                setPaymentPlan={setPaymentPlan}
+                selectedAmenities={selectedAmenities}
+                setSelectedAmenities={setSelectedAmenities}
+                communitiesList={communitiesList}
+                developersList={developersList}
+                propertyTypesList={propertyTypesList}
+                handoverTimelineOptions={handoverTimelineOptions}
+                paymentPlanOptions={paymentPlanOptions}
+                allAmenitiesList={allAmenitiesList}
               />
             </div>
 
@@ -261,7 +315,53 @@ function ProjectsPageContent() {
 
               {/* Grid View */}
               {sortedProjects.length > 0 && (
-                <ProjectGrid projects={sortedProjects} />
+                <>
+                  <ProjectGrid projects={sortedProjects.slice((currentPage - 1) * projectsPerPage, currentPage * projectsPerPage)} />
+                  
+                  {/* Pagination Bar */}
+                  {Math.ceil(sortedProjects.length / projectsPerPage) > 1 && (
+                    <div className="mt-10 flex flex-col sm:flex-row items-center justify-between gap-4 border-t pt-6">
+                      <p className="text-xs text-slate-500 font-medium">
+                        Showing <span className="font-semibold text-slate-800">{Math.min((currentPage - 1) * projectsPerPage + 1, sortedProjects.length)}</span> to{" "}
+                        <span className="font-semibold text-slate-800">{Math.min(currentPage * projectsPerPage, sortedProjects.length)}</span> of{" "}
+                        <span className="font-semibold text-slate-800">{sortedProjects.length}</span> listings
+                      </p>
+                      <div className="flex items-center gap-1.5">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                          disabled={currentPage === 1}
+                          className="h-9 w-9 p-0 rounded-xl"
+                        >
+                          <ChevronLeft className="h-4 w-4" />
+                        </Button>
+                        {Array.from({ length: Math.ceil(sortedProjects.length / projectsPerPage) }, (_, i) => i + 1).map((page) => (
+                          <Button
+                            key={page}
+                            variant={currentPage === page ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => setCurrentPage(page)}
+                            className={`h-9 w-9 p-0 rounded-xl font-bold ${
+                              currentPage === page ? "bg-slate-900 text-white" : ""
+                            }`}
+                          >
+                            {page}
+                          </Button>
+                        ))}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setCurrentPage((p) => Math.min(Math.ceil(sortedProjects.length / projectsPerPage), p + 1))}
+                          disabled={currentPage === Math.ceil(sortedProjects.length / projectsPerPage)}
+                          className="h-9 w-9 p-0 rounded-xl"
+                        >
+                          <ChevronRight className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </div>

@@ -48,6 +48,13 @@ export async function POST(request: Request) {
     }
 
     // --- LOCAL DISK FALLBACK (Development Mode) ---
+    if (process.env.NODE_ENV === "production") {
+      return NextResponse.json(
+        { error: "File uploads are only supported with Supabase Storage. Please configure NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY." },
+        { status: 503 }
+      );
+    }
+
     const uploadsDir = join(process.cwd(), "public", "uploads");
     await mkdir(uploadsDir, { recursive: true });
     const filePath = join(uploadsDir, uniqueFileName);

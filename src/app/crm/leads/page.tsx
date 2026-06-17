@@ -15,7 +15,9 @@ import {
   Phone,
   Mail,
   User,
-  Building
+  Building,
+  ChevronLeft,
+  ChevronRight
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -56,11 +58,23 @@ export default function CrmLeadsPage() {
   const [successMsg, setSuccessMsg] = useState("");
   const [notesText, setNotesText] = useState("");
   const [savingNotes, setSavingNotes] = useState(false);
+  const [currentUser, setCurrentUser] = useState<{ id?: number; name: string; email: string; role: string } | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const leadsPerPage = 10;
 
-  const loadLeads = async () => {
+  // Reset to page 1 on filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, selectedType, selectedStatus]);
+
+  const loadLeads = async (userObj?: any) => {
     setLoading(true);
     try {
-      const res = await fetch("/api/leads");
+      const user = userObj || (typeof window !== "undefined" && localStorage.getItem("chlonestone_user") ? JSON.parse(localStorage.getItem("chlonestone_user")!) : null);
+      const leadsUrl = user && user.role === "agent" && user.id
+        ? `/api/leads?agentId=${user.id}`
+        : "/api/leads";
+      const res = await fetch(leadsUrl);
       if (res.ok) {
         const data = await res.json();
         setLeads(data);
@@ -92,7 +106,13 @@ export default function CrmLeadsPage() {
   };
 
   useEffect(() => {
-    loadLeads();
+    let user = null;
+    const stored = localStorage.getItem("chlonestone_user");
+    if (stored) {
+      user = JSON.parse(stored);
+      setCurrentUser(user);
+    }
+    loadLeads(user);
     loadAgents();
   }, []);
 
@@ -325,7 +345,7 @@ export default function CrmLeadsPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y">
-                  {filteredLeads.map((l) => (
+                  {filteredLeads.slice((currentPage - 1) * leadsPerPage, currentPage * leadsPerPage).map((l) => (
                     <tr 
                       key={l.id} 
                       onClick={() => setSelectedLead(l)}
@@ -391,6 +411,50 @@ export default function CrmLeadsPage() {
               </table>
             )}
           </div>
+
+          {/* Pagination Controls */}
+          {Math.ceil(filteredLeads.length / leadsPerPage) > 1 && (
+            <div className="p-4 border-t flex flex-col sm:flex-row items-center justify-between gap-4 bg-slate-50/50">
+              <p className="text-[11px] text-slate-500 font-medium">
+                Showing <span className="font-semibold text-slate-800">{Math.min((currentPage - 1) * leadsPerPage + 1, filteredLeads.length)}</span> to{" "}
+                <span className="font-semibold text-slate-800">{Math.min(currentPage * leadsPerPage, filteredLeads.length)}</span> of{" "}
+                <span className="font-semibold text-slate-800">{filteredLeads.length}</span> leads
+              </p>
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="h-7 w-7 p-0 rounded-lg bg-white"
+                >
+                  <ChevronLeft className="h-3.5 w-3.5" />
+                </Button>
+                {Array.from({ length: Math.ceil(filteredLeads.length / leadsPerPage) }, (_, i) => i + 1).map((page) => (
+                  <Button
+                    key={page}
+                    variant={currentPage === page ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setCurrentPage(page)}
+                    className={`h-7 w-7 p-0 rounded-lg font-bold text-[11px] ${
+                      currentPage === page ? "bg-slate-900 text-white" : "bg-white"
+                    }`}
+                  >
+                    {page}
+                  </Button>
+                ))}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage((p) => Math.min(Math.ceil(filteredLeads.length / leadsPerPage), p + 1))}
+                  disabled={currentPage === Math.ceil(filteredLeads.length / leadsPerPage)}
+                  className="h-7 w-7 p-0 rounded-lg bg-white"
+                >
+                  <ChevronRight className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Lead Details sidebar */}
@@ -464,11 +528,12 @@ export default function CrmLeadsPage() {
                 </label>
                 <select
                   value={selectedLead.assignedAgentId || ""}
+                  disabled={currentUser?.role === "agent"}
                   onChange={(e) => {
                     const val = e.target.value;
                     handleUpdateLeadField(selectedLead.id, { assignedAgentId: val ? parseInt(val, 10) : null });
                   }}
-                  className="w-full text-xs rounded-xl border-slate-200 h-9 bg-slate-50 hover:bg-slate-100 border px-3 font-semibold text-slate-800 focus:outline-none focus:ring-1 focus:ring-primary"
+                  className="w-full text-xs rounded-xl border-slate-200 h-9 bg-slate-50 hover:bg-slate-100 border px-3 font-semibold text-slate-800 focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-75 disabled:cursor-not-allowed"
                 >
                   <option value="">-- Select Agent --</option>
                   {agents.map((a) => (
@@ -516,11 +581,22 @@ export default function CrmLeadsPage() {
 
               {/* Message */}
               {selectedLead.message && (
-                <div className="space-y-1">
-                  <p className="text-[0.6rem] font-bold text-slate-400 uppercase">Inquiry Message</p>
-                  <p className="text-xs text-slate-600 bg-slate-50 border p-3 rounded-xl leading-relaxed italic">
-                    "{selectedLead.message}"
+                <div className="space-y-1.5">
+                  <p className="text-[0.6rem] font-bold text-slate-400 uppercase flex items-center gap-1">
+                    <MessageSquare className="h-3 w-3" /> Inquiry Message
                   </p>
+                  <div className="bg-blue-50/60 border border-blue-100 rounded-xl p-3.5 space-y-1">
+                    <p className="text-xs text-slate-700 leading-relaxed">
+                      {selectedLead.message}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* No message fallback */}
+              {!selectedLead.message && (
+                <div className="bg-slate-50/70 border border-dashed border-slate-200 rounded-xl px-3 py-2.5">
+                  <p className="text-[0.65rem] text-slate-400 italic">No message provided with this inquiry.</p>
                 </div>
               )}
 

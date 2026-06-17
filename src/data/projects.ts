@@ -31,6 +31,7 @@ export interface Project {
   community: string;
   communityName?: string;
   location: string;
+  address?: string | null;
   propertyType: string;
   startingPrice: string;
   handover: string;

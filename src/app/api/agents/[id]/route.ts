@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import bcrypt from "bcryptjs";
 
 export async function PUT(
   request: Request,
@@ -8,15 +9,28 @@ export async function PUT(
   try {
     const { id } = await params;
     const body = await request.json();
+    
+    const updateData: any = {
+      name: body.name,
+      email: body.email,
+      phone: body.phone,
+      photoUrl: body.photoUrl,
+      role: body.role,
+    };
+
+    if (body.systemRole) {
+      updateData.systemRole = body.systemRole;
+    }
+    if (body.isBlocked !== undefined) {
+      updateData.isBlocked = body.isBlocked;
+    }
+    if (body.password) {
+      updateData.password = await bcrypt.hash(body.password, 10);
+    }
+
     const updated = await prisma.agent.update({
       where: { id: parseInt(id, 10) },
-      data: {
-        name: body.name,
-        email: body.email,
-        phone: body.phone,
-        photoUrl: body.photoUrl,
-        role: body.role,
-      },
+      data: updateData,
     });
     return NextResponse.json(updated);
   } catch (error: any) {

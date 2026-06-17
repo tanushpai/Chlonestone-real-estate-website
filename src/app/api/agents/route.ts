@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import bcrypt from "bcryptjs";
 
 export async function GET() {
   try {
@@ -19,6 +20,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Name, email, and phone are required" }, { status: 400 });
     }
 
+    let hashedPassword = null;
+    if (body.password) {
+      hashedPassword = await bcrypt.hash(body.password, 10);
+    }
+
     const agent = await prisma.agent.create({
       data: {
         name: body.name,
@@ -26,6 +32,9 @@ export async function POST(request: Request) {
         phone: body.phone,
         photoUrl: body.photoUrl || "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2",
         role: body.role || "Property Consultant",
+        password: hashedPassword,
+        systemRole: body.systemRole || "AGENT",
+        isBlocked: body.isBlocked !== undefined ? body.isBlocked : false,
       },
     });
     return NextResponse.json(agent);

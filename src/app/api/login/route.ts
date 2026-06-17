@@ -9,16 +9,53 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Email and password are required" }, { status: 400 });
     }
 
-    // Check admin credentials securely
-    if (email.toLowerCase() === "admin@chlonestone.com" && password === "admin123") {
+    // 1. Check if the login belongs to an Agent (Admin or Agent role)
+    const agent = await prisma.agent.findUnique({
+      where: {
+        email: email.toLowerCase(),
+      },
+    });
+
+    if (agent) {
+      if (agent.isBlocked) {
+        return NextResponse.json({ error: "Your account has been suspended. Please contact the administrator." }, { status: 403 });
+      }
+
+      if (!agent.password) {
+        return NextResponse.json({ error: "No password set for this agent account" }, { status: 400 });
+      }
+
+      // Check password (supports bcrypt and fallback plaintext for initial seeds)
+      const isBcryptHash = agent.password.startsWith("$2a$") || agent.password.startsWith("$2b$") || agent.password.startsWith("$2y$");
+      let passwordMatch = false;
+
+      if (isBcryptHash) {
+        passwordMatch = await bcrypt.compare(password, agent.password);
+      } else {
+        passwordMatch = password === agent.password;
+        if (passwordMatch) {
+          // Upgrade to secure bcrypt hash
+          const upgradedHash = await bcrypt.hash(password, 10);
+          await prisma.agent.update({
+            where: { id: agent.id },
+            data: { password: upgradedHash },
+          });
+        }
+      }
+
+      if (!passwordMatch) {
+        return NextResponse.json({ error: "Incorrect password. Please try again." }, { status: 400 });
+      }
+
       return NextResponse.json({
-        name: "Platform Admin",
-        email: "admin@chlonestone.com",
-        role: "admin",
+        id: agent.id,
+        name: agent.name,
+        email: agent.email,
+        role: agent.systemRole.toLowerCase(), // "admin" or "agent"
       });
     }
 
-    // Find user/lead in the database
+    // 2. Check if the login belongs to a Lead (Client/Investor)
     const user = await prisma.lead.findFirst({
       where: {
         email: {
@@ -55,11 +92,13 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json({
+      id: user.id,
       name: user.name,
       email: user.email,
       role: "client",
     });
   } catch (error: any) {
+    console.error("Login error:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

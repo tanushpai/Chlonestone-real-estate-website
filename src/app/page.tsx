@@ -24,7 +24,7 @@ import { Input } from "@/components/ui/input";
 
 export default function Home() {
   const [trendingProjects, setTrendingProjects] = useState<Project[]>([]);
-  const [guideForm, setGuideForm] = useState({ name: "", email: "" });
+  const [guideForm, setGuideForm] = useState({ name: "", email: "", phone: "" });
   const [isGuideSubmitting, setIsGuideSubmitting] = useState(false);
   const [isGuideDownloaded, setIsGuideDownloaded] = useState(false);
   const [guideUrl, setGuideUrl] = useState("");
@@ -44,7 +44,10 @@ export default function Home() {
 
   const handleGuideSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!guideForm.name || !guideForm.email) return;
+    if (!guideForm.name || !guideForm.email || !guideForm.phone) {
+      alert("Name, Email, and Phone are required.");
+      return;
+    }
     setIsGuideSubmitting(true);
 
     try {
@@ -55,6 +58,7 @@ export default function Home() {
         body: JSON.stringify({
           name: guideForm.name,
           email: guideForm.email,
+          phone: guideForm.phone,
           interestType: "guide",
           projectName: "Dubai Off-Plan Investor Guide 2026",
         }),
@@ -300,6 +304,14 @@ export default function Home() {
                     placeholder="Email Address"
                     value={guideForm.email}
                     onChange={(e) => setGuideForm({ ...guideForm, email: e.target.value })}
+                    className="bg-slate-900 border-slate-800 text-white rounded-xl placeholder:text-slate-500 h-10 text-xs"
+                  />
+                  <Input
+                    type="tel"
+                    required
+                    placeholder="Phone Number"
+                    value={guideForm.phone}
+                    onChange={(e) => setGuideForm({ ...guideForm, phone: e.target.value })}
                     className="bg-slate-900 border-slate-800 text-white rounded-xl placeholder:text-slate-500 h-10 text-xs"
                   />
                   <Button 

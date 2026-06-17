@@ -301,16 +301,32 @@ export default function ProjectDetailClient({ project }: ProjectDetailClientProp
   };
 
   const handleInquiryShortcut = (beds: string) => {
-    setLeadForm((prev) => ({
-      ...prev,
-      message: `Hi, I am interested in the ${beds} unit at ${project.name}. Please provide availability and pricing details.`,
-    }));
-    
-    // Scroll smoothly to contact form
-    const formElement = document.getElementById("inquiry-form-section");
-    if (formElement) {
-      formElement.scrollIntoView({ behavior: "smooth" });
+    let storedName = "";
+    let storedEmail = "";
+    let storedPhone = "";
+    if (typeof window !== "undefined") {
+      const storedStr = localStorage.getItem("chlonestone_user");
+      if (storedStr) {
+        try {
+          const stored = JSON.parse(storedStr);
+          storedName = stored.name || "";
+          storedEmail = stored.email || "";
+          storedPhone = stored.phone || "";
+        } catch (e) {}
+      }
     }
+
+    setLeadForm({
+      name: storedName,
+      email: storedEmail,
+      phone: storedPhone,
+      role: "investor",
+      funding: "installments",
+      timeframe: "immediate",
+      message: `Hi, I am interested in the ${beds} unit at ${project.name}. Please provide availability and pricing details.`,
+    });
+    
+    setShowContactModal(true);
   };
 
   return (
@@ -417,6 +433,19 @@ export default function ProjectDetailClient({ project }: ProjectDetailClientProp
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8">
         {/* Left Column (2/3) */}
         <div className="lg:col-span-2 space-y-8 lg:space-y-12">
+          {/* Address Section (Displayed before About) */}
+          {project.address && (
+            <section className="bg-slate-50 border border-slate-100 rounded-3xl p-6 sm:p-8 flex items-start gap-4 shadow-sm">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-secondary text-primary flex-shrink-0">
+                <MapPin className="h-6 w-6" />
+              </div>
+              <div className="space-y-1">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">Property Address</h3>
+                <p className="text-base sm:text-lg font-semibold text-slate-800 leading-snug">{project.address}</p>
+              </div>
+            </section>
+          )}
+
           {/* About Section */}
           <section className="space-y-4">
             <h2 className="text-2xl font-bold font-heading text-slate-900 sm:text-3xl">
@@ -427,18 +456,26 @@ export default function ProjectDetailClient({ project }: ProjectDetailClientProp
             </p>
           </section>
 
-          {/* Handover Details */}
-          <section className="space-y-4 rounded-3xl border border-border bg-slate-50 p-6 sm:p-8">
-            <h2 className="text-xl font-bold font-heading text-slate-900">
-              Handover Details
-            </h2>
-            <div className="flex items-center gap-3.5">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-secondary text-primary">
-                <Calendar className="h-5 w-5" />
+          {/* Handover & Payment Plan Details */}
+          <section className="rounded-3xl border border-border bg-slate-50 p-6 sm:p-8 shadow-sm">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <div className="flex items-center gap-3.5">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-secondary text-primary">
+                  <Calendar className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500 font-medium">Estimated Handover</p>
+                  <p className="text-base font-bold text-slate-850">{project.handover}</p>
+                </div>
               </div>
-              <div>
-                <p className="text-xs text-slate-500 font-medium">Estimated Handover</p>
-                <p className="text-base font-bold text-slate-800">{project.handover}</p>
+              <div className="flex items-center gap-3.5 border-t pt-4 sm:border-t-0 sm:pt-0 sm:border-l sm:pl-6 border-slate-200">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-secondary text-primary">
+                  <Building className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500 font-medium">Payment Plan Ratio</p>
+                  <p className="text-base font-bold text-slate-850">{project.paymentPlan} Structure</p>
+                </div>
               </div>
             </div>
           </section>

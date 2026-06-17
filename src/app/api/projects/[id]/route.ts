@@ -71,6 +71,7 @@ export async function PUT(
         communityName: body.communityName ?? existingProject.communityName,
         communityId: communityId ?? existingProject.communityId,
         location: body.location ?? existingProject.location,
+        address: body.address !== undefined ? body.address : existingProject.address,
         propertyType: body.propertyType ?? existingProject.propertyType,
         startingPrice: body.startingPrice ?? existingProject.startingPrice,
         handover: body.handover ?? existingProject.handover,

@@ -31,6 +31,7 @@ model Project {
   community          Community? @relation(fields: [communityId], references: [id], onDelete: Cascade)
   communityId        Int?
   location           String
+  address            String?
   propertyType       String
   startingPrice      String
   handover           String
@@ -86,19 +87,35 @@ model Developer {
 }
 
 model Agent {
-  id       Int       @id @default(autoincrement())
-  name     String
-  email    String    @unique
-  phone    String
-  photoUrl String
-  role     String
-  projects Project[]
-  leads    Lead[]
+  id         Int       @id @default(autoincrement())
+  name       String
+  email      String    @unique
+  phone      String
+  photoUrl   String
+  role       String    // Job title/Specialty (e.g. Sales Director, Palm Jumeirah Specialist)
+  projects   Project[]
+  leads      Lead[]
+  password   String?   // Encrypted password for CRM login
+  systemRole String    @default("AGENT") // "ADMIN" or "AGENT"
+  isBlocked  Boolean   @default(false)   // Block agent access
 }
 
 model Setting {
-  id       Int    @id @default(1)
-  guideUrl String @default("/uploads/dubai-off-plan-investor-guide-2026.pdf")
+  id               Int    @id @default(1)
+  guideUrl         String @default("/uploads/dubai-off-plan-investor-guide-2026.pdf")
+  welcomeSubject   String @default("Welcome to Chlonestone Newsletter!")
+  welcomeBody      String @default("Thank you for subscribing to the Chlonestone newsletter. You will receive immediate updates on premium off-plan launches, ROI projections, and waterfront inventory allocations in Dubai.")
+  guideSubject     String @default("Download: Dubai Off-Plan Investor Guide 2026")
+  guideBody        String @default("Thank you for requesting the Dubai Off-Plan Investor Guide 2026. You can download the booklet directly using this link: {{GUIDE_URL}}")
+  inquirySubject   String @default("Thank you for contacting Chlonestone Real Estate")
+  inquiryBody      String @default("Hello {{CLIENT_NAME}},\n\nThank you for reaching out to Chlonestone. We have received your inquiry regarding \"{{PROJECT_NAME}}\" and one of our premier real estate advisors will connect with you shortly.")
+}
+
+model Subscriber {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  phone     String?
+  createdAt DateTime @default(now())
 }
 
 

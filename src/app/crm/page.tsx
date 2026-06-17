@@ -9,11 +9,13 @@ import {
   TrendingUp, 
   Plus, 
   Calendar,
-  CheckCircle
+  CheckCircle,
+  Mail
 } from "lucide-react";
 import Link from "next/link";
 import { getProjects } from "@/lib/dataService";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 interface DBLead {
   id: number;
@@ -34,13 +36,34 @@ export default function CrmDashboardPage() {
   const [loadingLeads, setLoadingLeads] = useState(true);
   const [guideUrl, setGuideUrl] = useState("");
   const [guideUploading, setGuideUploading] = useState(false);
+  const [currentUser, setCurrentUser] = useState<{ id?: number; name: string; email: string; role: string } | null>(null);
+
+  // Email template states
+  const [welcomeSubject, setWelcomeSubject] = useState("");
+  const [welcomeBody, setWelcomeBody] = useState("");
+  const [guideSubject, setGuideSubject] = useState("");
+  const [guideBody, setGuideBody] = useState("");
+  const [inquirySubject, setInquirySubject] = useState("");
+  const [inquiryBody, setInquiryBody] = useState("");
+  const [savingTemplates, setSavingTemplates] = useState(false);
 
   useEffect(() => {
+    let user = null;
+    const stored = localStorage.getItem("chlonestone_user");
+    if (stored) {
+      user = JSON.parse(stored);
+      setCurrentUser(user);
+    }
+
     getProjects().then((all) => {
       setProjectCount(all.length);
     });
 
-    fetch("/api/leads")
+    const leadsUrl = user && user.role === "agent" && user.id
+      ? `/api/leads?agentId=${user.id}`
+      : "/api/leads";
+
+    fetch(leadsUrl)
       .then((res) => res.json())
       .then((data) => {
         setLeadsList(data);
@@ -51,12 +74,47 @@ export default function CrmDashboardPage() {
         setLoadingLeads(false);
       });
 
-    // Load dynamic guideUrl settings
+    // Load dynamic settings including templates
     fetch("/api/settings")
       .then((res) => res.json())
-      .then((data) => setGuideUrl(data.guideUrl || ""))
+      .then((data) => {
+        setGuideUrl(data.guideUrl || "");
+        setWelcomeSubject(data.welcomeSubject || "");
+        setWelcomeBody(data.welcomeBody || "");
+        setGuideSubject(data.guideSubject || "");
+        setGuideBody(data.guideBody || "");
+        setInquirySubject(data.inquirySubject || "");
+        setInquiryBody(data.inquiryBody || "");
+      })
       .catch((err) => console.error(err));
   }, []);
+
+  const handleSaveTemplates = async () => {
+    setSavingTemplates(true);
+    try {
+      const res = await fetch("/api/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          welcomeSubject,
+          welcomeBody,
+          guideSubject,
+          guideBody,
+          inquirySubject,
+          inquiryBody,
+        }),
+      });
+      if (res.ok) {
+        alert("Automated Email Templates saved successfully!");
+      } else {
+        throw new Error("Failed to save templates");
+      }
+    } catch (err) {
+      alert("Error saving templates.");
+    } finally {
+      setSavingTemplates(false);
+    }
+  };
 
   const handleGuideUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -103,10 +161,12 @@ export default function CrmDashboardPage() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white border p-6 rounded-3xl shadow-sm">
         <div>
           <h1 className="text-xl font-bold text-slate-900 font-heading">
-            Welcome Back, Agent
+            Welcome Back, {currentUser?.name || "Agent"}
           </h1>
           <p className="text-xs text-slate-500 mt-1">
-            Here's the current active inventory and lead funnel metrics for your agency.
+            {currentUser?.role === "agent" 
+              ? "Here are your assigned lead funnel metrics and activity." 
+              : "Here's the current active inventory and lead funnel metrics for your agency."}
           </p>
         </div>
         <Link href="/crm/projects/new">
@@ -180,50 +240,143 @@ export default function CrmDashboardPage() {
 
       </div>
 
-      {/* Pipeline Funnel */}
-      <div className="bg-white border p-6 rounded-3xl shadow-sm space-y-4">
-        <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
-          Sales Pipeline Funnel
-        </h3>
+      {/* Interactive Analytics Dashboard Charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         
-        <div className="grid grid-cols-6 gap-2 text-center text-[0.65rem] sm:text-xs">
-          <div className="bg-blue-50 border border-blue-100 p-3 rounded-xl">
-            <p className="font-bold text-blue-700">New</p>
-            <p className="text-lg font-extrabold text-slate-800 mt-1">
-              {getStatusCount("New")}
-            </p>
+        {/* Funnel Area Chart Card */}
+        <div className="bg-white border p-6 rounded-3xl shadow-sm space-y-4">
+          <div className="flex justify-between items-center border-b pb-3">
+            <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
+              Lead Conversion Pipeline Funnel
+            </h3>
+            <span className="text-[10px] bg-slate-50 border px-2.5 py-1 rounded-full text-slate-500 font-semibold">
+              Live Funnel
+            </span>
           </div>
-          <div className="bg-amber-50 border border-amber-100 p-3 rounded-xl">
-            <p className="font-bold text-amber-700">Contacted</p>
-            <p className="text-lg font-extrabold text-slate-800 mt-1">
-              {getStatusCount("Contacted")}
-            </p>
-          </div>
-          <div className="bg-purple-50 border border-purple-100 p-3 rounded-xl">
-            <p className="font-bold text-purple-700">Viewing Scheduled</p>
-            <p className="text-lg font-extrabold text-slate-800 mt-1">
-              {getStatusCount("Viewing Scheduled")}
-            </p>
-          </div>
-          <div className="bg-red-50 border border-red-100 p-3 rounded-xl">
-            <p className="font-bold text-red-700">Follow-up Req.</p>
-            <p className="text-lg font-extrabold text-slate-800 mt-1">
-              {getStatusCount("Follow-up Required")}
-            </p>
-          </div>
-          <div className="bg-emerald-50 border border-emerald-100 p-3 rounded-xl">
-            <p className="font-bold text-emerald-700">Closed Won</p>
-            <p className="text-lg font-extrabold text-slate-800 mt-1">
-              {getStatusCount("Closed Won")}
-            </p>
-          </div>
-          <div className="bg-slate-50 border border-slate-100 p-3 rounded-xl">
-            <p className="font-bold text-slate-500">Lost</p>
-            <p className="text-lg font-extrabold text-slate-800 mt-1">
-              {getStatusCount("Lost")}
+
+          <div className="h-64 flex flex-col justify-between">
+            {/* SVG Amortization Funnel */}
+            <div className="flex-1 relative mt-2 flex items-center justify-center">
+              <svg className="w-full h-full max-h-[200px]" viewBox="0 0 400 180" preserveAspectRatio="none">
+                <defs>
+                  <linearGradient id="newGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.85"/>
+                    <stop offset="100%" stopColor="#60a5fa" stopOpacity="0.95"/>
+                  </linearGradient>
+                  <linearGradient id="contactGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stopColor="#f59e0b" stopOpacity="0.85"/>
+                    <stop offset="100%" stopColor="#fbbf24" stopOpacity="0.95"/>
+                  </linearGradient>
+                  <linearGradient id="viewGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stopColor="#a855f7" stopOpacity="0.85"/>
+                    <stop offset="100%" stopColor="#c084fc" stopOpacity="0.95"/>
+                  </linearGradient>
+                  <linearGradient id="followGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stopColor="#ef4444" stopOpacity="0.85"/>
+                    <stop offset="100%" stopColor="#f87171" stopOpacity="0.95"/>
+                  </linearGradient>
+                  <linearGradient id="wonGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stopColor="#10b981" stopOpacity="0.85"/>
+                    <stop offset="100%" stopColor="#34d399" stopOpacity="0.95"/>
+                  </linearGradient>
+                </defs>
+
+                {/* Draw Funnel Stages */}
+                {/* 1. New */}
+                <polygon points="10,10 390,10 350,40 50,40" fill="url(#newGrad)" className="transition duration-300 hover:opacity-90 cursor-pointer" />
+                {/* 2. Contacted */}
+                <polygon points="50,43 350,43 310,73 90,73" fill="url(#contactGrad)" className="transition duration-300 hover:opacity-90 cursor-pointer" />
+                {/* 3. Viewing Scheduled */}
+                <polygon points="90,76 310,76 270,106 130,106" fill="url(#viewGrad)" className="transition duration-300 hover:opacity-90 cursor-pointer" />
+                {/* 4. Follow-up Required */}
+                <polygon points="130,109 270,109 230,139 170,139" fill="url(#followGrad)" className="transition duration-300 hover:opacity-90 cursor-pointer" />
+                {/* 5. Closed Won */}
+                <polygon points="170,142 230,142 210,172 190,172" fill="url(#wonGrad)" className="transition duration-300 hover:opacity-90 cursor-pointer" />
+
+                {/* Text Labels inside SVG */}
+                <text x="200" y="28" textAnchor="middle" fill="#ffffff" className="text-[10px] font-bold select-none pointer-events-none">
+                  New: {getStatusCount("New")}
+                </text>
+                <text x="200" y="61" textAnchor="middle" fill="#ffffff" className="text-[10px] font-bold select-none pointer-events-none">
+                  Contacted: {getStatusCount("Contacted")}
+                </text>
+                <text x="200" y="94" textAnchor="middle" fill="#ffffff" className="text-[10px] font-bold select-none pointer-events-none">
+                  Viewing: {getStatusCount("Viewing Scheduled")}
+                </text>
+                <text x="200" y="127" textAnchor="middle" fill="#ffffff" className="text-[10px] font-bold select-none pointer-events-none">
+                  Follow-ups: {getStatusCount("Follow-up Required")}
+                </text>
+                <text x="200" y="160" textAnchor="middle" fill="#ffffff" className="text-[10px] font-bold select-none pointer-events-none">
+                  Won: {getStatusCount("Closed Won")}
+                </text>
+              </svg>
+            </div>
+            
+            <p className="text-[10px] text-slate-400 text-center leading-relaxed mt-2 font-medium">
+              Distribution displays lead stages from Initial Capture through successfully Closed Won accounts.
             </p>
           </div>
         </div>
+
+        {/* Lead Source / Interest Category Bar Chart */}
+        <div className="bg-white border p-6 rounded-3xl shadow-sm space-y-4">
+          <div className="flex justify-between items-center border-b pb-3">
+            <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
+              Lead Source & Interest Categories
+            </h3>
+            <span className="text-[10px] bg-slate-50 border px-2.5 py-1 rounded-full text-slate-500 font-semibold">
+              Live Categories
+            </span>
+          </div>
+
+          <div className="h-64 flex flex-col justify-between">
+            {/* SVG Bars for Interests */}
+            <div className="flex-1 flex flex-col justify-center space-y-3 mt-2">
+              {[
+                { name: "Investor Guide Downloads", key: "guide", color: "bg-blue-600" },
+                { name: "Direct Contact / Inquiry", key: "contact", color: "bg-emerald-600" },
+                { name: "Property Wishlist Saves", key: "wishlist", color: "bg-pink-600" },
+                { name: "Newsletter / Other Signups", key: "other", color: "bg-amber-600" },
+              ].map((cat) => {
+                const count = leadsList.filter(l => {
+                  if (cat.key === "guide") return l.interestType === "guide";
+                  if (cat.key === "contact") return l.interestType === "contact" || l.interestType === "general";
+                  if (cat.key === "wishlist") return l.interestType === "wishlist" || l.interestType === "wishlist-nav" || l.interestType === "wishlist-page";
+                  return l.interestType !== "guide" && l.interestType !== "contact" && l.interestType !== "general" && !l.interestType.includes("wishlist");
+                }).length;
+
+                const maxVal = Math.max(1, ...[
+                  leadsList.filter(l => l.interestType === "guide").length,
+                  leadsList.filter(l => l.interestType === "contact" || l.interestType === "general").length,
+                  leadsList.filter(l => l.interestType === "wishlist" || l.interestType === "wishlist-nav" || l.interestType === "wishlist-page").length,
+                  leadsList.filter(l => l.interestType !== "guide" && l.interestType !== "contact" && l.interestType !== "general" && !l.interestType.includes("wishlist")).length,
+                ]);
+                const widthPercent = Math.max(8, (count / maxVal) * 100);
+
+                return (
+                  <div key={cat.key} className="space-y-1">
+                    <div className="flex justify-between text-[10px] font-bold text-slate-600">
+                      <span>{cat.name}</span>
+                      <span className="text-slate-800">{count} Leads</span>
+                    </div>
+                    <div className="w-full bg-slate-50 border border-slate-100 h-6 rounded-full overflow-hidden flex items-center p-0.5">
+                      <div 
+                        style={{ width: `${widthPercent}%` }} 
+                        className={`h-full ${cat.color} rounded-full transition-all duration-1000 flex items-center justify-end px-2.5 shadow-sm`}
+                      >
+                        {count > 0 && <span className="text-[8px] font-black text-white">{Math.round(widthPercent)}%</span>}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <p className="text-[10px] text-slate-400 text-center leading-relaxed mt-2 font-medium">
+              Distribution reflects user engagement across booklets, listing captures, and bookmarks.
+            </p>
+          </div>
+        </div>
+
       </div>
 
       {/* Two Column details: Leads & Followups */}
@@ -395,6 +548,104 @@ export default function CrmDashboardPage() {
           </div>
         </div>
 
+      </div>
+
+      {/* Email Templates Manager Section */}
+      <div className="bg-white border rounded-3xl p-6 shadow-sm space-y-6">
+        <div className="border-b pb-3 flex items-center gap-2">
+          <Mail className="h-5 w-5 text-primary" />
+          <div>
+            <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">Automated Email Templates Manager</h3>
+            <p className="text-[10px] text-slate-400">Configure client-facing email confirmations and booklet deliveries. Use dynamic tags <code>{"{{CLIENT_NAME}}"}</code>, <code>{"{{PROJECT_NAME}}"}</code>, and <code>{"{{GUIDE_URL}}"}</code>.</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Welcome Email Template */}
+          <div className="space-y-3.5 bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
+            <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wide">1. Newsletter Welcome</h4>
+            <div className="space-y-2">
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-slate-500 uppercase">Subject</label>
+                <Input
+                  type="text"
+                  value={welcomeSubject}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setWelcomeSubject(e.target.value)}
+                  className="text-xs bg-white rounded-xl h-9 border-slate-200"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-slate-500 uppercase">Email Body</label>
+                <textarea
+                  value={welcomeBody}
+                  onChange={(e) => setWelcomeBody(e.target.value)}
+                  rows={6}
+                  className="w-full text-xs bg-white rounded-xl border border-slate-200 p-2.5 outline-none focus:ring-1 focus:ring-primary font-sans text-slate-700"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Guide Email Template */}
+          <div className="space-y-3.5 bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
+            <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wide">2. Booklet Booklet Delivery</h4>
+            <div className="space-y-2">
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-slate-500 uppercase">Subject</label>
+                <Input
+                  type="text"
+                  value={guideSubject}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setGuideSubject(e.target.value)}
+                  className="text-xs bg-white rounded-xl h-9 border-slate-200"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-slate-500 uppercase">Email Body</label>
+                <textarea
+                  value={guideBody}
+                  onChange={(e) => setGuideBody(e.target.value)}
+                  rows={6}
+                  className="w-full text-xs bg-white rounded-xl border border-slate-200 p-2.5 outline-none focus:ring-1 focus:ring-primary font-sans text-slate-700"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Inquiry Email Template */}
+          <div className="space-y-3.5 bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
+            <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wide">3. Property Listing Inquiry</h4>
+            <div className="space-y-2">
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-slate-500 uppercase">Subject</label>
+                <Input
+                  type="text"
+                  value={inquirySubject}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setInquirySubject(e.target.value)}
+                  className="text-xs bg-white rounded-xl h-9 border-slate-200"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-slate-500 uppercase">Email Body</label>
+                <textarea
+                  value={inquiryBody}
+                  onChange={(e) => setInquiryBody(e.target.value)}
+                  rows={6}
+                  className="w-full text-xs bg-white rounded-xl border border-slate-200 p-2.5 outline-none focus:ring-1 focus:ring-primary font-sans text-slate-700"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex justify-end pt-2 border-t">
+          <Button
+            onClick={handleSaveTemplates}
+            disabled={savingTemplates}
+            className="bg-primary hover:bg-blue-800 text-white rounded-xl px-6 font-semibold"
+          >
+            {savingTemplates ? "Saving..." : "Save Email Templates"}
+          </Button>
+        </div>
       </div>
 
     </div>

@@ -145,6 +145,11 @@ export default function AuthLeadCaptureModal() {
       return;
     }
 
+    if (!regPhone.trim()) {
+      alert("Phone number is required.");
+      return;
+    }
+
     if (!validateEmail(regEmail)) {
       setRegEmailError("Enter a valid email");
       valid = false;
@@ -385,6 +390,7 @@ export default function AuthLeadCaptureModal() {
                   placeholder=""
                   value={regPhone}
                   onChange={(e) => setRegPhone(e.target.value)}
+                  required
                   className="text-xs rounded-lg border border-slate-200 h-10"
                 />
               </div>

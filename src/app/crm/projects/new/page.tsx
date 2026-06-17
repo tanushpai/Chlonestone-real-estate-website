@@ -22,6 +22,7 @@ export default function CrmNewProjectPage() {
   const [escrowNumber, setEscrowNumber] = useState("");
   const [reraPermit, setReraPermit] = useState("RERA-8472918");
   const [description, setDescription] = useState("");
+  const [address, setAddress] = useState("");
   const [thumbnailImage, setThumbnailImage] = useState("");
   const [imagesList, setImagesList] = useState<string[]>([
     "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00",
@@ -303,6 +304,7 @@ export default function CrmNewProjectPage() {
       image: thumbnailImage || "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00",
       images: imagesList,
       description,
+      address: address || null,
       reraPermit,
       escrowNumber: escrowNumber || null,
       totalUnits: "240 Units",
@@ -387,6 +389,16 @@ export default function CrmNewProjectPage() {
                 onChange={(e) => setStartingPrice(e.target.value)}
               />
             </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-slate-700">Property Address</label>
+            <Input
+              type="text"
+              placeholder="e.g. Crescent Road, Palm Jumeirah, Dubai"
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+            />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { CheckCircle, Save, Award, Plus, Trash2, X, Upload } from "lucide-react";
+import { CheckCircle, Save, Award, Plus, Trash2, X, Upload, ChevronLeft, ChevronRight } from "lucide-react";
 import { getDbDevelopers, saveDbDeveloper, deleteDbDeveloper, DbDeveloper } from "@/lib/dataService";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +10,8 @@ export default function CrmDevelopersPage() {
   const [devList, setDevList] = useState<DbDeveloper[]>([]);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [isCreating, setIsCreating] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const devsPerPage = 10;
 
   // States for form inputs
   const [name, setName] = useState("");
@@ -274,7 +276,7 @@ export default function CrmDevelopersPage() {
       {/* Grid List of Developers */}
       {!isCreating && editingId === null && (
         <div className="grid gap-6 grid-cols-1 md:grid-cols-2">
-          {devList.map((d) => (
+          {devList.slice((currentPage - 1) * devsPerPage, currentPage * devsPerPage).map((d) => (
             <div 
               key={d.id} 
               className="bg-white border rounded-3xl p-5 shadow-sm space-y-4 hover:shadow-md transition duration-300 flex flex-col justify-between"
@@ -341,6 +343,49 @@ export default function CrmDevelopersPage() {
         </div>
       )}
 
+      {/* Pagination Controls */}
+      {!isCreating && editingId === null && Math.ceil(devList.length / devsPerPage) > 1 && (
+        <div className="mt-8 flex flex-col sm:flex-row items-center justify-between gap-4 border-t pt-6">
+          <p className="text-xs text-slate-500 font-medium">
+            Showing <span className="font-semibold text-slate-800">{Math.min((currentPage - 1) * devsPerPage + 1, devList.length)}</span> to{" "}
+            <span className="font-semibold text-slate-800">{Math.min(currentPage * devsPerPage, devList.length)}</span> of{" "}
+            <span className="font-semibold text-slate-800">{devList.length}</span> developers
+          </p>
+          <div className="flex items-center gap-1.5">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="h-9 w-9 p-0 rounded-xl bg-white"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            {Array.from({ length: Math.ceil(devList.length / devsPerPage) }, (_, i) => i + 1).map((page) => (
+              <Button
+                key={page}
+                variant={currentPage === page ? "default" : "outline"}
+                size="sm"
+                onClick={() => setCurrentPage(page)}
+                className={`h-9 w-9 p-0 rounded-xl font-bold ${
+                  currentPage === page ? "bg-slate-900 text-white" : "bg-white"
+                }`}
+              >
+                {page}
+              </Button>
+            ))}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage((p) => Math.min(Math.ceil(devList.length / devsPerPage), p + 1))}
+              disabled={currentPage === Math.ceil(devList.length / devsPerPage)}
+              className="h-9 w-9 p-0 rounded-xl bg-white"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

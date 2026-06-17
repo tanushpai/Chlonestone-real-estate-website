@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { CheckCircle, Save, Plus, Trash2, X, Upload, Phone, Mail, UserCheck } from "lucide-react";
+import { CheckCircle, Save, Plus, Trash2, X, Upload, Phone, Mail, UserCheck, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -12,12 +12,16 @@ interface Agent {
   phone: string;
   photoUrl: string;
   role: string;
+  systemRole?: string;
+  isBlocked?: boolean;
 }
 
 export default function CrmAgentsPage() {
   const [agentsList, setAgentsList] = useState<Agent[]>([]);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [isCreating, setIsCreating] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const agentsPerPage = 10;
 
   // Form input states
   const [name, setName] = useState("");
@@ -25,6 +29,9 @@ export default function CrmAgentsPage() {
   const [phone, setPhone] = useState("");
   const [photoUrl, setPhotoUrl] = useState("");
   const [role, setRole] = useState("Property Consultant");
+  const [password, setPassword] = useState("");
+  const [systemRole, setSystemRole] = useState("AGENT");
+  const [isBlocked, setIsBlocked] = useState(false);
 
   const [uploading, setUploading] = useState(false);
   const [successMsg, setSuccessMsg] = useState("");
@@ -42,6 +49,18 @@ export default function CrmAgentsPage() {
   };
 
   useEffect(() => {
+    const stored = localStorage.getItem("chlonestone_user");
+    if (stored) {
+      const u = JSON.parse(stored);
+      if (u.role !== "admin") {
+        alert("Access denied: Administrators only.");
+        window.location.href = "/crm";
+        return;
+      }
+    } else {
+      window.location.href = "/";
+      return;
+    }
     loadAgents();
   }, []);
 
@@ -53,6 +72,9 @@ export default function CrmAgentsPage() {
     setPhone(a.phone);
     setPhotoUrl(a.photoUrl);
     setRole(a.role);
+    setPassword("");
+    setSystemRole(a.systemRole || "AGENT");
+    setIsBlocked(a.isBlocked || false);
   };
 
   const handleStartCreate = () => {
@@ -63,6 +85,9 @@ export default function CrmAgentsPage() {
     setPhone("");
     setPhotoUrl("https://images.unsplash.com/photo-1573496359142-b8d87734a5a2");
     setRole("Property Consultant");
+    setPassword("");
+    setSystemRole("AGENT");
+    setIsBlocked(false);
   };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -89,13 +114,22 @@ export default function CrmAgentsPage() {
       return;
     }
 
-    const payload = {
+    const payload: any = {
       name: name.trim(),
       email: email.trim().toLowerCase(),
       phone: phone.trim(),
       photoUrl: photoUrl.trim(),
       role: role.trim(),
+      systemRole,
+      isBlocked,
     };
+
+    if (password.trim()) {
+      payload.password = password.trim();
+    } else if (isCreating) {
+      alert("Please enter a temporary login password for the new agent.");
+      return;
+    }
 
     const isNew = !editingId;
     const url = isNew ? "/api/agents" : `/api/agents/${editingId}`;
@@ -108,15 +142,18 @@ export default function CrmAgentsPage() {
         body: JSON.stringify(payload),
       });
 
-      if (!res.ok) throw new Error("Failed to save agent profile");
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || "Failed to save agent profile");
+      }
 
       setEditingId(null);
       setIsCreating(false);
       setSuccessMsg(`Successfully saved agent ${name}!`);
       loadAgents();
       setTimeout(() => setSuccessMsg(""), 3000);
-    } catch (error) {
-      alert("Error saving agent information.");
+    } catch (error: any) {
+      alert(`Error saving agent information: ${error.message}`);
     }
   };
 
@@ -144,7 +181,7 @@ export default function CrmAgentsPage() {
             Agents Directory Manager
           </h1>
           <p className="text-xs text-slate-500 mt-1">
-            Manage your company representatives, contact details, and project assignments.
+            Manage your company representatives, contact details, roles, and credentials.
           </p>
         </div>
         {!editingId && !isCreating && (
@@ -266,6 +303,41 @@ export default function CrmAgentsPage() {
                   onChange={(e) => setPhotoUrl(e.target.value)} 
                 />
               </div>
+
+              {/* Login & Roles Section */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 border-t pt-4">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-slate-700">Login Password</label>
+                  <Input 
+                    type="password" 
+                    placeholder={isCreating ? "Set password" : "Leave blank to keep current"} 
+                    value={password} 
+                    onChange={(e) => setPassword(e.target.value)} 
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-slate-700">System Role</label>
+                  <select
+                    value={systemRole}
+                    onChange={(e) => setSystemRole(e.target.value)}
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <option value="AGENT">Agent</option>
+                    <option value="ADMIN">Admin</option>
+                  </select>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-slate-700">Access Status</label>
+                  <select
+                    value={isBlocked ? "blocked" : "active"}
+                    onChange={(e) => setIsBlocked(e.target.value === "blocked")}
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <option value="active">Active (Access Allowed)</option>
+                    <option value="blocked">Blocked (Suspended)</option>
+                  </select>
+                </div>
+              </div>
             </div>
 
           </div>
@@ -292,17 +364,25 @@ export default function CrmAgentsPage() {
 
       {/* Directory Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {agentsList.map((agent) => (
+        {agentsList.slice((currentPage - 1) * agentsPerPage, currentPage * agentsPerPage).map((agent) => (
           <div key={agent.id} className="bg-white border rounded-3xl p-5 shadow-sm space-y-4 hover:shadow-md transition">
             
             {/* Header info */}
             <div className="flex gap-4 items-center">
               <div className="relative h-14 w-14 rounded-full overflow-hidden border bg-slate-50 flex-shrink-0">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={agent.photoUrl} alt={agent.name} className="object-cover w-full h-full" />
+                <img src={agent.photoUrl || "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2"} alt={agent.name} className="object-cover w-full h-full" />
               </div>
               <div className="min-w-0">
-                <h4 className="font-bold text-slate-900 truncate">{agent.name}</h4>
+                <h4 className="font-bold text-slate-900 truncate flex items-center gap-1.5">
+                  {agent.name}
+                  {agent.isBlocked && (
+                    <span className="text-[8px] bg-red-100 text-red-700 px-1.5 py-0.5 rounded uppercase font-bold">Blocked</span>
+                  )}
+                  {agent.systemRole === "ADMIN" && (
+                    <span className="text-[8px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded uppercase font-bold">Admin</span>
+                  )}
+                </h4>
                 <p className="text-[10px] bg-slate-100 border text-slate-600 px-2 py-0.5 rounded-full font-bold inline-block mt-0.5 uppercase tracking-wider">{agent.role}</p>
               </div>
             </div>
@@ -346,6 +426,49 @@ export default function CrmAgentsPage() {
         ))}
       </div>
 
+      {/* Pagination Controls */}
+      {!isCreating && editingId === null && Math.ceil(agentsList.length / agentsPerPage) > 1 && (
+        <div className="mt-8 flex flex-col sm:flex-row items-center justify-between gap-4 border-t pt-6">
+          <p className="text-xs text-slate-500 font-medium">
+            Showing <span className="font-semibold text-slate-800">{Math.min((currentPage - 1) * agentsPerPage + 1, agentsList.length)}</span> to{" "}
+            <span className="font-semibold text-slate-800">{Math.min(currentPage * agentsPerPage, agentsList.length)}</span> of{" "}
+            <span className="font-semibold text-slate-800">{agentsList.length}</span> agents
+          </p>
+          <div className="flex items-center gap-1.5">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="h-9 w-9 p-0 rounded-xl bg-white"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            {Array.from({ length: Math.ceil(agentsList.length / agentsPerPage) }, (_, i) => i + 1).map((page) => (
+              <Button
+                key={page}
+                variant={currentPage === page ? "default" : "outline"}
+                size="sm"
+                onClick={() => setCurrentPage(page)}
+                className={`h-9 w-9 p-0 rounded-xl font-bold ${
+                  currentPage === page ? "bg-slate-900 text-white" : "bg-white"
+                }`}
+              >
+                {page}
+              </Button>
+            ))}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage((p) => Math.min(Math.ceil(agentsList.length / agentsPerPage), p + 1))}
+              disabled={currentPage === Math.ceil(agentsList.length / agentsPerPage)}
+              className="h-9 w-9 p-0 rounded-xl bg-white"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

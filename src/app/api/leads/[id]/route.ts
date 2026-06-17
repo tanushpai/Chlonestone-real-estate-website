@@ -27,25 +27,44 @@ export async function PUT(
   try {
     const { id } = await params;
     const body = await request.json();
+    // Build sparse update: only set fields that are explicitly present in request body
+    const updateData: Record<string, any> = {};
+    if (body.name !== undefined) updateData.name = body.name;
+    if (body.email !== undefined) updateData.email = body.email;
+    if (body.phone !== undefined) updateData.phone = body.phone;
+    if (body.password !== undefined) updateData.password = body.password;
+    if (body.interestType !== undefined) updateData.interestType = body.interestType;
+    if (body.role !== undefined) updateData.role = body.role;
+    if (body.funding !== undefined) updateData.funding = body.funding;
+    if (body.timeframe !== undefined) updateData.timeframe = body.timeframe;
+    if (body.message !== undefined) updateData.message = body.message;
+    if (body.projectName !== undefined) updateData.projectName = body.projectName;
+    if (body.status !== undefined) updateData.status = body.status;
+    if (body.notes !== undefined) updateData.notes = body.notes;
+    if (body.assignedAgentId !== undefined) {
+      updateData.assignedAgentId = body.assignedAgentId ? parseInt(body.assignedAgentId, 10) : null;
+    }
+
     const lead = await prisma.lead.update({
       where: { id: parseInt(id, 10) },
-      data: {
-        name: body.name,
-        email: body.email,
-        phone: body.phone,
-        password: body.password,
-        interestType: body.interestType,
-        role: body.role,
-        funding: body.funding,
-        timeframe: body.timeframe,
-        message: body.message,
-        projectName: body.projectName,
-        status: body.status,
-        notes: body.notes,
-        assignedAgentId: body.assignedAgentId !== undefined ? (body.assignedAgentId ? parseInt(body.assignedAgentId, 10) : null) : undefined,
-      },
+      data: updateData,
       include: { assignedAgent: true },
     });
+
+    if (body.assignedAgentId !== undefined && lead.email) {
+      const targetAgentId = body.assignedAgentId ? parseInt(body.assignedAgentId, 10) : null;
+      await prisma.lead.updateMany({
+        where: {
+          email: {
+            equals: lead.email.toLowerCase(),
+            mode: "insensitive",
+          },
+        },
+        data: {
+          assignedAgentId: targetAgentId,
+        },
+      });
+    }
     return NextResponse.json(lead);
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
