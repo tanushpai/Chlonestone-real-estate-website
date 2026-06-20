@@ -5,7 +5,6 @@ import { ArrowLeft, ChevronRight, Home } from "lucide-react";
 import Navbar from "@/components/layout/Navbar";
 import ProjectDetailClient from "@/components/projects/ProjectDetailClient";
 import ProjectCard from "@/components/projects/ProjectCard";
-import { projects } from "@/data/projects";
 import prisma from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -60,9 +59,7 @@ async function getProjectData(slug: string) {
     };
   }
 
-  // Fallback to static mock projects
-  const staticProj = projects.find((p) => p.slug === slug);
-  return staticProj || null;
+  return null;
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
@@ -109,12 +106,6 @@ export default async function ProjectDetailsPage({ params }: PageProps) {
     developerProfile: p.developerProfile as any,
     coordinates: p.coordinates as { lat: number; lng: number }
   }));
-
-  if (similarProjects.length === 0) {
-    similarProjects = projects
-      .filter((p) => p.id !== project.id)
-      .slice(0, 3);
-  }
 
   // Structured Data (JSON-LD) for SEO
   const jsonLd = {

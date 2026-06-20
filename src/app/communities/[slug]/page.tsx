@@ -5,8 +5,6 @@ import Image from "next/image";
 import { ChevronRight, Home, Compass, ShieldCheck, Clock } from "lucide-react";
 import Navbar from "@/components/layout/Navbar";
 import ProjectCard from "@/components/projects/ProjectCard";
-import { communities as staticCommunities } from "@/data/communities";
-import { projects as staticProjects } from "@/data/projects";
 import { Button } from "@/components/ui/button";
 import prisma from "@/lib/prisma";
 
@@ -32,9 +30,7 @@ async function getCommunityData(slug: string) {
     };
   }
 
-  // Fallback to static mock communities
-  const staticComm = staticCommunities.find((c) => c.slug === slug);
-  return staticComm || null;
+  return null;
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
@@ -83,12 +79,6 @@ export default async function CommunityDetailsPage({ params }: PageProps) {
     developerProfile: p.developerProfile as any,
     coordinates: p.coordinates as { lat: number; lng: number }
   }));
-
-  if (communityProjects.length === 0) {
-    communityProjects = staticProjects.filter(
-      (p) => (p.communityName || p.community || "").toLowerCase() === community.name.toLowerCase()
-    );
-  }
 
   return (
     <>

@@ -4,7 +4,6 @@ import { ArrowLeft, ChevronRight, Home, Award } from "lucide-react";
 import Navbar from "@/components/layout/Navbar";
 import ProjectCard from "@/components/projects/ProjectCard";
 import prisma from "@/lib/prisma";
-import { projects as staticProjects } from "@/data/projects";
 
 export const dynamic = "force-dynamic";
 
@@ -46,11 +45,6 @@ export default async function DeveloperDetailsPage({ params }: PageProps) {
   let developerProjects: any[] = allProjects.filter(
     (p) => slugify(p.developer) === slug || (dbDev && p.developer.trim().toLowerCase() === dbDev.name.trim().toLowerCase())
   );
-
-  // If no DB match, try static fallback
-  if (developerProjects.length === 0) {
-    developerProjects = staticProjects.filter(p => slugify(p.developer) === slug);
-  }
 
   if (developerProjects.length === 0 && !dbDev) {
     notFound();

@@ -5,15 +5,23 @@ import Link from "next/link";
 import Image from "next/image";
 import { Search, MapPin, TrendingUp, Percent, ChevronLeft, ChevronRight } from "lucide-react";
 import Navbar from "@/components/layout/Navbar";
-import { communities } from "@/data/communities";
+import { Community } from "@/data/communities";
+import { getCommunities } from "@/lib/dataService";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
 export default function CommunitiesPage() {
+  const [communities, setCommunities] = useState<Community[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedType, setSelectedType] = useState<"all" | "apartments" | "villas">("all");
   const [currentPage, setCurrentPage] = useState(1);
   const commsPerPage = 10;
+
+  useEffect(() => {
+    getCommunities().then((comms) => {
+      setCommunities(comms);
+    });
+  }, []);
 
   // Reset to page 1 on filter changes
   useEffect(() => {
