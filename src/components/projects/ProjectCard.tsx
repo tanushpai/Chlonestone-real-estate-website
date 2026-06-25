@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Heart, MapPin, Home } from "lucide-react";
+import { Heart, MapPin, Home, Scale } from "lucide-react";
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -32,6 +32,22 @@ export default function ProjectCard({
   project,
 }: ProjectCardProps) {
   const [isWishlisted, setIsWishlisted] = useState(false);
+  const [isCompared, setIsCompared] = useState(false);
+
+  const checkCompare = () => {
+    try {
+      const compareStr = localStorage.getItem("chlonestone_compare");
+      if (compareStr) {
+        const compareList = JSON.parse(compareStr);
+        setIsCompared(compareList.includes(project.id));
+      } else {
+        setIsCompared(false);
+      }
+    } catch (err) {
+      console.error(err);
+      setIsCompared(false);
+    }
+  };
 
   const checkWishlist = () => {
     try {
@@ -52,10 +68,13 @@ export default function ProjectCard({
 
   useEffect(() => {
     checkWishlist();
+    checkCompare();
     window.addEventListener("wishlist-change", checkWishlist);
+    window.addEventListener("compare-change", checkCompare);
     window.addEventListener("auth-state-change", checkWishlist);
     return () => {
       window.removeEventListener("wishlist-change", checkWishlist);
+      window.removeEventListener("compare-change", checkCompare);
       window.removeEventListener("auth-state-change", checkWishlist);
     };
   }, [project.id]);
@@ -110,11 +129,40 @@ export default function ProjectCard({
       window.dispatchEvent(new Event("wishlist-change"));
     }
   };
+
+  const handleCompareClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    try {
+      const compareStr = localStorage.getItem("chlonestone_compare");
+      let compareList: number[] = compareStr ? JSON.parse(compareStr) : [];
+
+      if (compareList.includes(project.id)) {
+        compareList = compareList.filter(id => id !== project.id);
+        localStorage.setItem("chlonestone_compare", JSON.stringify(compareList));
+        setIsCompared(false);
+        window.dispatchEvent(new Event("compare-change"));
+      } else {
+        if (compareList.length >= 3) {
+          alert("You can compare up to 3 properties side-by-side.");
+          return;
+        }
+        compareList.push(project.id);
+        localStorage.setItem("chlonestone_compare", JSON.stringify(compareList));
+        setIsCompared(true);
+        window.dispatchEvent(new Event("compare-change"));
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   return (
     <Link href={`/projects/${project.slug}`}>
-      <Card className="group h-full overflow-hidden rounded-[1.75rem] border border-border bg-card shadow-soft transition duration-300 hover:-translate-y-1 hover:shadow-xl cursor-pointer">
-        {/* Image Container */}
-        <div className="relative h-52 sm:h-56 lg:h-60 bg-slate-100 overflow-hidden">
+      <Card className="group h-full overflow-hidden border border-border bg-card shadow-soft transition duration-300 hover:-translate-y-1 hover:shadow-xl cursor-pointer flex flex-col">
+        {/* Image Container - Taller for vertical rectangle layout */}
+        <div className="relative aspect-[4/3] w-full bg-slate-100 overflow-hidden">
           <Image
             src={project.image}
             alt={project.name}
@@ -122,6 +170,15 @@ export default function ProjectCard({
             className="object-cover transition-transform duration-500 group-hover:scale-105"
           />
           
+          {/* Compare Button */}
+          <button
+            onClick={handleCompareClick}
+            className="absolute top-3 left-3 flex h-10 w-10 items-center justify-center bg-white border border-slate-100 shadow-md transition hover:bg-slate-50 z-10 rounded-full"
+            title="Add to Compare"
+          >
+            <Scale className={`h-4.5 w-4.5 ${isCompared ? "text-primary fill-primary/10" : "text-slate-700"}`} />
+          </button>
+
           {/* Wishlist Icon */}
           <button
             onClick={handleWishlistClick}
@@ -131,39 +188,31 @@ export default function ProjectCard({
           </button>
         </div>
 
-        <CardContent className="flex flex-col flex-grow p-4 sm:p-5">
-          <div className="flex-grow space-y-3">
-            <div className="flex items-start justify-between gap-3">
+        <CardContent className="flex flex-col flex-grow p-4 sm:p-5 justify-between">
+          <div className="space-y-3">
+            <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-xl font-semibold text-foreground sm:text-2xl font-heading">
+                <p className="text-xl font-bold text-foreground sm:text-2xl font-heading">
                   {project.startingPrice}
                 </p>
               </div>
-              <Badge variant="secondary" className="rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.22em] text-amber-900">
-                {project.propertyType.toUpperCase()}
+              <Badge variant="secondary" className="border border-amber-200 bg-amber-50 px-2.5 py-0.5 text-[0.65rem] font-semibold uppercase tracking-wider text-amber-900">
+                {project.propertyType}
               </Badge>
             </div>
 
-            <h3 className="text-lg font-semibold text-foreground line-clamp-1 font-heading">
+            <h3 className="text-base sm:text-lg font-bold text-foreground line-clamp-1 font-heading">
               {project.name}
             </h3>
 
-            <div className="flex items-center gap-2 text-sm text-slate-500">
-              <MapPin className="h-4 w-4 flex-shrink-0 text-amber-700" />
-              <span className="truncate">{project.communityName || project.community || ""}</span>
-            </div>
-          </div>
-
-          <div className="mt-6 grid gap-2 border-t border-border pt-4 text-xs font-medium text-slate-600 sm:grid-cols-3">
-            <div className="flex items-center justify-center gap-1.5 rounded-full bg-slate-50 hover:bg-slate-100 transition px-3 py-2 text-center">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 flex-shrink-0" />
-              <span className="truncate">{project.location}</span>
-            </div>
-            <div className="flex items-center justify-center gap-1.5 rounded-full bg-slate-50 hover:bg-slate-100 transition px-3 py-2 text-center">
-              <span className="truncate">{project.developer}</span>
-            </div>
-            <div className="flex items-center justify-center gap-1.5 rounded-full bg-slate-50 hover:bg-slate-100 transition px-3 py-2 text-center">
-              <span className="truncate">{project.handover}</span>
+            <div className="flex items-center justify-between gap-2 text-xs sm:text-sm text-slate-500">
+              <div className="flex items-center gap-1.5 truncate">
+                <MapPin className="h-4 w-4 flex-shrink-0 text-amber-600" />
+                <span className="truncate">{project.communityName || project.community || ""}</span>
+              </div>
+              <span className="text-[11px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider flex-shrink-0">
+                {project.handover}
+              </span>
             </div>
           </div>
         </CardContent>

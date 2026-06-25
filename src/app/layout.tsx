@@ -4,6 +4,9 @@ import "./globals.css";
 import Footer from "@/components/layout/Footer";
 import AuthLeadCaptureModal from "@/components/auth/AuthLeadCaptureModal";
 import WhatsAppButton from "@/components/layout/WhatsAppButton";
+import PropertyChatbot from "@/components/layout/PropertyChatbot";
+import ComparisonBar from "@/components/projects/ComparisonBar";
+import ToolsSidebar from "@/components/tools/ToolsSidebar";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -34,6 +37,9 @@ export default function RootLayout({
         {children}
         <Footer />
         <WhatsAppButton />
+        <PropertyChatbot />
+        <ComparisonBar />
+        <ToolsSidebar />
         <AuthLeadCaptureModal />
       </body>
     </html>

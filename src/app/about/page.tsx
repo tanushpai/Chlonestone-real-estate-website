@@ -18,14 +18,15 @@ export default function AboutPage() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 space-y-12 sm:space-y-16">
           
           {/* Hero Strip Section */}
-          <section className="relative h-64 sm:h-80 w-full rounded-3xl overflow-hidden bg-slate-900 flex items-center p-6 sm:p-12">
-            <Image
-              src="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab"
-              alt="Chlonestone office tower"
-              fill
-              className="object-cover opacity-50"
-            />
-            <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/70 to-transparent" />
+          <section className="relative h-64 sm:h-80 w-full rounded-none overflow-hidden bg-slate-950 flex items-center p-6 sm:p-12 border border-slate-800">
+            <div className="absolute inset-y-0 right-0 w-full sm:w-1/2 h-full z-0">
+              <Image
+                src="/Chlonestone_logo.png"
+                alt="Chlonestone logo background"
+                fill
+                className="object-contain object-right p-6 sm:p-12"
+              />
+            </div>
             <div className="relative z-10 max-w-xl text-white">
               <span className="text-xs font-bold uppercase tracking-wider text-primary">
                 Corporate Profile
@@ -112,7 +113,7 @@ export default function AboutPage() {
               </div>
               <div>
                 <p className="font-bold text-slate-800">Licensed Brokerage</p>
-                <p className="mt-0.5">RERA registration certificate number 194857</p>
+                <p className="mt-0.5">RERA registration certificate number 91442</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
@@ -136,7 +137,7 @@ export default function AboutPage() {
               <Link href="/projects">
                 <Button className="rounded-xl px-5 bg-[#111827] text-white">Explore Projects</Button>
               </Link>
-              <Link href="tel:+971526238780">
+              <Link href="tel:+971503483366">
                 <Button variant="outline" className="rounded-xl px-5 bg-white">Talk to Specialist</Button>
               </Link>
             </div>

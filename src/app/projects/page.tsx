@@ -31,14 +31,13 @@ function ProjectsPageContent() {
   const [beds, setBeds] = useState("any");
   const [sortBy, setSortBy] = useState("default");
   const [paymentPlan, setPaymentPlan] = useState("any");
-  const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const projectsPerPage = 10;
 
   // Reset to page 1 on filter changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, community, propertyType, developer, minPrice, maxPrice, handoverYear, beds, paymentPlan, selectedAmenities]);
+  }, [searchQuery, community, propertyType, developer, minPrice, maxPrice, handoverYear, beds, paymentPlan]);
 
   // Load projects from dataService on mount
   useEffect(() => {
@@ -133,17 +132,10 @@ function ProjectsPageContent() {
       paymentPlan === "any" || 
       project.paymentPlan === paymentPlan;
 
-    // 9. Amenities
-    const matchesAmenities = 
-      selectedAmenities.length === 0 || 
-      selectedAmenities.every(amenity => 
-        project.amenities.some(a => a.toLowerCase() === amenity.toLowerCase())
-      );
-
     // Keyword search includes address matches
     const matchesSearchWithAddress = matchesSearch || (project.address || "").toLowerCase().includes(searchQuery.toLowerCase());
 
-    return matchesSearchWithAddress && matchesCommunity && matchesType && matchesDeveloper && matchesHandover && matchesBeds && matchesPrice && matchesPaymentPlan && matchesAmenities;
+    return matchesSearchWithAddress && matchesCommunity && matchesType && matchesDeveloper && matchesHandover && matchesBeds && matchesPrice && matchesPaymentPlan;
   });
 
   // Sort
@@ -178,7 +170,6 @@ function ProjectsPageContent() {
     setBeds("any");
     setSortBy("default");
     setPaymentPlan("any");
-    setSelectedAmenities([]);
   };
 
   // Dynamic Options
@@ -187,7 +178,6 @@ function ProjectsPageContent() {
   const propertyTypesList = Array.from(new Set(allProjects.map(p => p.propertyType))).filter(Boolean).sort();
   const handoverTimelineOptions = Array.from(new Set(allProjects.map(p => p.handover))).filter(Boolean).sort();
   const paymentPlanOptions = Array.from(new Set(allProjects.map(p => p.paymentPlan))).filter(Boolean).sort();
-  const allAmenitiesList = Array.from(new Set(allProjects.flatMap(p => p.amenities))).filter(Boolean).sort();
 
   return (
     <>
@@ -248,14 +238,11 @@ function ProjectsPageContent() {
                     handleReset={handleResetFilters}
                     paymentPlan={paymentPlan}
                     setPaymentPlan={setPaymentPlan}
-                    selectedAmenities={selectedAmenities}
-                    setSelectedAmenities={setSelectedAmenities}
                     communitiesList={communitiesList}
                     developersList={developersList}
                     propertyTypesList={propertyTypesList}
                     handoverTimelineOptions={handoverTimelineOptions}
                     paymentPlanOptions={paymentPlanOptions}
-                    allAmenitiesList={allAmenitiesList}
                   />
                 </SheetContent>
               </Sheet>
@@ -288,14 +275,11 @@ function ProjectsPageContent() {
                 handleReset={handleResetFilters}
                 paymentPlan={paymentPlan}
                 setPaymentPlan={setPaymentPlan}
-                selectedAmenities={selectedAmenities}
-                setSelectedAmenities={setSelectedAmenities}
                 communitiesList={communitiesList}
                 developersList={developersList}
                 propertyTypesList={propertyTypesList}
                 handoverTimelineOptions={handoverTimelineOptions}
                 paymentPlanOptions={paymentPlanOptions}
-                allAmenitiesList={allAmenitiesList}
               />
             </div>
 

@@ -49,7 +49,7 @@ export default function ProjectDetailClient({ project }: ProjectDetailClientProp
   const agent = (project as any).agent || {
     name: "Ali Al-Mansoori",
     role: "Sales Director",
-    phone: "+971526238780",
+    phone: "+971503483366",
     photoUrl: "https://images.unsplash.com/photo-1560250097-0b93528c311a",
     email: "ali@chlonestone.com"
   }; 
@@ -678,7 +678,10 @@ export default function ProjectDetailClient({ project }: ProjectDetailClientProp
                   rel="noreferrer"
                   className="w-full border border-emerald-200 hover:bg-emerald-50/50 text-emerald-600 font-semibold py-3.5 rounded-xl transition flex items-center justify-center gap-2 text-sm bg-white"
                 >
-                  <MessageSquare className="h-4 w-4 text-emerald-500" />
+                  <svg viewBox="0 0 24 24" className="h-4 w-4 fill-current text-emerald-600">
+                    <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.502-5.73-1.45L0 24zm6.59-4.846c1.6.95 3.188 1.449 4.625 1.451 5.437.002 9.861-4.416 9.863-9.864.001-2.639-1.026-5.122-2.892-6.991C16.376 1.882 13.9 .856 11.26.856 5.823.856 1.396 5.275 1.393 10.722c-.001 1.517.398 2.998 1.157 4.316l-1.095 4.002 4.102-1.076z" />
+                    <path d="M17.076 14.372c-.27-.135-1.602-.79-1.85-.88-.25-.09-.432-.135-.615.135-.183.27-.708.88-.868 1.06-.16.18-.32.201-.59.066-2.15-1.061-3.52-2.015-4.662-3.977-.3-.518.3-.481.859-1.6.092-.183.046-.344-.023-.48-.068-.135-.615-1.48-.843-2.025-.222-.533-.448-.46-.615-.468-.16-.008-.344-.01-.527-.01-.183 0-.48.069-.731.344-.251.275-.959.937-.959 2.285 0 1.348.981 2.65 1.119 2.835.137.186 1.93 2.947 4.676 4.133.654.282 1.164.45 1.562.577.657.208 1.256.179 1.729.109.528-.078 1.602-.655 1.83-1.256.228-.601.228-1.119.16-1.227-.069-.108-.251-.173-.522-.308z" />
+                  </svg>
                   WhatsApp
                 </a>
               </div>

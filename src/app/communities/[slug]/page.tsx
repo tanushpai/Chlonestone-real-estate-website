@@ -68,7 +68,7 @@ export default async function CommunityDetailsPage({ params }: PageProps) {
     }
   });
 
-  let communityProjects: any[] = dbProjects.map(p => ({
+  const communityProjects: any[] = dbProjects.map(p => ({
     ...p,
     community: p.communityName || "",
     images: p.images as string[],

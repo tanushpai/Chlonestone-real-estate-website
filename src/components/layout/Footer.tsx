@@ -16,7 +16,7 @@ export default function Footer() {
     <footer className="bg-[#0B0C1E] text-slate-300 border-t border-slate-900 mt-auto">
       <div className="mx-auto max-w-7xl px-6 py-12 lg:py-16">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-          
+
           {/* Logo and Tagline Column */}
           <div className="md:col-span-1 space-y-4">
             <Link href="/" className="inline-block">
@@ -30,9 +30,6 @@ export default function Footer() {
                 />
               </div>
             </Link>
-            <p className="text-xs text-slate-400 font-medium">
-              - GATEWAY TO NEW BEGINNING -
-            </p>
             <p className="text-xs text-slate-500 leading-relaxed">
               Chlonestone specializes in Dubai off-plan properties, investment advisory, mortgage assistance, and premium residential opportunities across the UAE.
             </p>
@@ -46,7 +43,7 @@ export default function Footer() {
             <ul className="space-y-2 text-sm">
               {links.map((link) => (
                 <li key={link.name}>
-                  <Link 
+                  <Link
                     href={link.href}
                     className="hover:text-primary transition duration-200"
                   >
@@ -66,13 +63,17 @@ export default function Footer() {
               <li className="flex items-start gap-2.5">
                 <MapPin className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
                 <span className="text-slate-400">
-                  Office 1802, Iris Bay Tower, Business Bay, Dubai, UAE
+                  COMMERCIAL BANK OF DUBAI-BUILDING - M-01,<br />
+                  Al Khabeesi, Dubai, UAE<br />
+                  <span className="text-[10px] text-slate-500 block mt-1">
+                    Plot: 64-7 | DM No: 128-469 | Makani: 31895 95518
+                  </span>
                 </span>
               </li>
               <li className="flex items-center gap-2.5">
                 <Phone className="h-4 w-4 text-primary flex-shrink-0" />
-                <a href="tel:+971526238780" className="hover:text-primary transition">
-                  +971 52 623 8780
+                <a href="tel:+971503483366" className="hover:text-primary transition">
+                  +971 50 348 3366
                 </a>
               </li>
               <li className="flex items-center gap-2.5">
@@ -95,11 +96,7 @@ export default function Footer() {
             <div className="text-[0.7rem] text-slate-400 space-y-1 bg-slate-950/40 p-3 rounded-xl border border-slate-900/60">
               <div className="flex items-center gap-1.5">
                 <CheckCircle2 className="h-3 w-3 text-emerald-500" />
-                <span>RERA Broker License: <strong>194857</strong></span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <CheckCircle2 className="h-3 w-3 text-emerald-500" />
-                <span>Office Registration No: <strong>19485</strong></span>
+                <span>RERA Broker License: <strong>91442</strong></span>
               </div>
             </div>
           </div>
@@ -115,9 +112,13 @@ export default function Footer() {
         <div className="flex flex-col sm:flex-row items-center justify-between text-[0.7rem] text-slate-500 gap-4">
           <p>© {new Date().getFullYear()} Chlonestone Real Estate. All rights reserved.</p>
           <div className="flex gap-4">
-            <span className="hover:text-slate-400 transition cursor-pointer">Privacy Policy</span>
+            <Link href="/privacy-policy" className="hover:text-slate-400 transition">
+              Privacy Policy
+            </Link>
             <span>·</span>
-            <span className="hover:text-slate-400 transition cursor-pointer">Terms & Conditions</span>
+            <Link href="/terms-and-conditions" className="hover:text-slate-400 transition">
+              Terms & Conditions
+            </Link>
           </div>
         </div>
       </div>

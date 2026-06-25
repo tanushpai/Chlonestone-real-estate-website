@@ -17,7 +17,10 @@ import {
   User,
   Building,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Clock,
+  History,
+  Plus
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,6 +30,15 @@ interface Agent {
   name: string;
   photoUrl: string;
   role: string;
+}
+
+interface LeadActivity {
+  id: number;
+  leadId: number;
+  type: string; // 'NOTE' | 'STATUS_CHANGE' | 'EMAIL_SENT' | 'WHATSAPP_CLICKED' | 'CREATION'
+  content: string;
+  agentName: string | null;
+  createdAt: string;
 }
 
 interface Lead {
@@ -45,6 +57,9 @@ interface Lead {
   assignedAgentId: number | null;
   assignedAgent?: Agent | null;
   createdAt: string;
+  activities?: LeadActivity[];
+  dealValue: number | null;
+  commissionRate: number | null;
 }
 
 export default function CrmLeadsPage() {
@@ -57,15 +72,89 @@ export default function CrmLeadsPage() {
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [successMsg, setSuccessMsg] = useState("");
   const [notesText, setNotesText] = useState("");
+  const [dealValueText, setDealValueText] = useState("");
+  const [commissionRateText, setCommissionRateText] = useState("");
   const [savingNotes, setSavingNotes] = useState(false);
   const [currentUser, setCurrentUser] = useState<{ id?: number; name: string; email: string; role: string } | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const leadsPerPage = 10;
 
+  // New state variables for activity logging
+  const [activeTab, setActiveTab] = useState<"details" | "timeline">("details");
+  const [activities, setActivities] = useState<LeadActivity[]>([]);
+  const [loadingActivities, setLoadingActivities] = useState(false);
+  const [newActivityContent, setNewActivityContent] = useState("");
+  const [submittingActivity, setSubmittingActivity] = useState(false);
+
   // Reset to page 1 on filter changes
   useEffect(() => {
     setCurrentPage(1);
   }, [searchQuery, selectedType, selectedStatus]);
+
+  const fetchActivities = async (leadId: number) => {
+    setLoadingActivities(true);
+    try {
+      const res = await fetch(`/api/leads/${leadId}/activities`);
+      if (res.ok) {
+        const data = await res.json();
+        setActivities(data);
+      }
+    } catch (error) {
+      console.error("Failed to load activities", error);
+    } finally {
+      setLoadingActivities(false);
+    }
+  };
+
+  const handleLogAction = async (leadId: number, type: string, content: string) => {
+    try {
+      const res = await fetch(`/api/leads/${leadId}/activities`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          type,
+          content,
+          agentName: currentUser?.name || "Agent",
+        }),
+      });
+      if (res.ok) {
+        if (selectedLead?.id === leadId) {
+          fetchActivities(leadId);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to log activity", error);
+    }
+  };
+
+  const handleAddActivity = async (type: string) => {
+    if (!selectedLead || !newActivityContent.trim()) return;
+    setSubmittingActivity(true);
+    try {
+      const res = await fetch(`/api/leads/${selectedLead.id}/activities`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          type,
+          content: newActivityContent.trim(),
+          agentName: currentUser?.name || "Agent",
+        }),
+      });
+      if (res.ok) {
+        const newAct = await res.json();
+        setActivities((prev) => [newAct, ...prev]);
+        setNewActivityContent("");
+      }
+    } catch (error) {
+      console.error("Failed to add activity log", error);
+    } finally {
+      setSubmittingActivity(false);
+    }
+  };
 
   const loadLeads = async (userObj?: any) => {
     setLoading(true);
@@ -119,8 +208,15 @@ export default function CrmLeadsPage() {
   useEffect(() => {
     if (selectedLead) {
       setNotesText(selectedLead.notes || "");
+      setDealValueText(selectedLead.dealValue !== null && selectedLead.dealValue !== undefined ? selectedLead.dealValue.toString() : "");
+      setCommissionRateText(selectedLead.commissionRate !== null && selectedLead.commissionRate !== undefined ? selectedLead.commissionRate.toString() : "");
+      fetchActivities(selectedLead.id);
+      setActiveTab("details"); // Default back to details when selection changes
     } else {
       setNotesText("");
+      setDealValueText("");
+      setCommissionRateText("");
+      setActivities([]);
     }
   }, [selectedLead?.id]);
 
@@ -147,12 +243,16 @@ export default function CrmLeadsPage() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(fields),
+        body: JSON.stringify({
+          ...fields,
+          agentName: currentUser?.name || "Agent"
+        }),
       });
       if (res.ok) {
         const updated = await res.json();
         setLeads((prev) => prev.map((l) => (l.id === leadId ? { ...l, ...updated } : l)));
         setSelectedLead(updated);
+        fetchActivities(leadId); // Refresh logs since status changes or assignments trigger timeline items
         setSuccessMsg("Lead updated successfully!");
         setTimeout(() => setSuccessMsg(""), 3000);
       }
@@ -164,7 +264,13 @@ export default function CrmLeadsPage() {
   const handleSaveNotes = async () => {
     if (!selectedLead) return;
     setSavingNotes(true);
-    await handleUpdateLeadField(selectedLead.id, { notes: notesText });
+    const dVal = dealValueText.trim() ? parseFloat(dealValueText) : null;
+    const cRate = commissionRateText.trim() ? parseFloat(commissionRateText) : null;
+    await handleUpdateLeadField(selectedLead.id, {
+      notes: notesText,
+      dealValue: dVal,
+      commissionRate: cRate
+    });
     setSavingNotes(false);
   };
 
@@ -356,7 +462,26 @@ export default function CrmLeadsPage() {
                       <td className="p-4">
                         <div className="font-bold text-slate-900">{l.name}</div>
                         <div className="text-[0.7rem] text-slate-400 mt-0.5">{l.email}</div>
-                        {l.phone && <div className="text-[0.7rem] text-slate-400">{l.phone}</div>}
+                        {l.phone && (
+                          <div className="text-[0.7rem] text-slate-400 flex items-center gap-1.5 mt-0.5">
+                            <span>{l.phone}</span>
+                            <a
+                              href={`https://wa.me/${l.phone.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(
+                                `Hello ${l.name},\n\nThank you for your interest in Chlonestone Real Estate. I see you inquired about ${l.projectName || "our properties"} on our portal. Are you available for a quick chat?`
+                              )}`}
+                              target="_blank"
+                              rel="noreferrer"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleLogAction(l.id, "WHATSAPP_CLICKED", "Initiated WhatsApp chat from leads table");
+                              }}
+                              className="text-emerald-600 hover:text-emerald-800 transition"
+                              title="Message on WhatsApp"
+                            >
+                              <MessageSquare className="h-3 w-3" />
+                            </a>
+                          </div>
+                        )}
                       </td>
                       <td className="p-4">
                         {l.projectName ? (
@@ -458,9 +583,10 @@ export default function CrmLeadsPage() {
         </div>
 
         {/* Lead Details sidebar */}
-        <div className="lg:col-span-1 bg-white border rounded-3xl p-6 shadow-sm flex flex-col justify-between h-fit min-h-[500px]">
+        <div className="lg:col-span-1 bg-white border rounded-3xl p-5 shadow-sm flex flex-col justify-between h-fit min-h-[550px]">
           {selectedLead ? (
-            <div className="space-y-5">
+            <div className="space-y-4">
+              {/* Profile Header */}
               <div className="border-b pb-3 flex justify-between items-center">
                 <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
                   <User className="h-4 w-4 text-primary" /> Lead Profile
@@ -470,167 +596,349 @@ export default function CrmLeadsPage() {
                 </span>
               </div>
 
-              {/* General Contact Info */}
-              <div className="space-y-2.5">
-                <div className="flex items-start gap-2.5">
-                  <div className="h-7 w-7 rounded-lg bg-slate-50 border flex items-center justify-center text-slate-400">
-                    <User className="h-3.5 w-3.5" />
-                  </div>
-                  <div>
-                    <p className="text-[0.6rem] font-bold text-slate-400 uppercase">Full Name</p>
-                    <p className="text-xs font-bold text-slate-800">{selectedLead.name}</p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-2.5">
-                  <div className="h-7 w-7 rounded-lg bg-slate-50 border flex items-center justify-center text-slate-400">
-                    <Mail className="h-3.5 w-3.5" />
-                  </div>
-                  <div>
-                    <p className="text-[0.6rem] font-bold text-slate-400 uppercase">Email Address</p>
-                    <p className="text-xs font-semibold text-slate-600">{selectedLead.email}</p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-2.5">
-                  <div className="h-7 w-7 rounded-lg bg-slate-50 border flex items-center justify-center text-slate-400">
-                    <Phone className="h-3.5 w-3.5" />
-                  </div>
-                  <div>
-                    <p className="text-[0.6rem] font-bold text-slate-400 uppercase">Phone Number</p>
-                    <p className="text-xs font-semibold text-slate-600">
-                      {selectedLead.phone || <span className="text-slate-400 italic">None Provided</span>}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Salesforce Core CRM: Pipeline Status Control */}
-              <div className="border-t pt-3 space-y-2">
-                <label className="text-[0.65rem] font-bold text-slate-400 uppercase tracking-wider">
-                  Pipeline Status
-                </label>
-                <select
-                  value={selectedLead.status}
-                  onChange={(e) => handleUpdateLeadField(selectedLead.id, { status: e.target.value })}
-                  className="w-full text-xs rounded-xl border-slate-200 h-9 bg-slate-50 hover:bg-slate-100 border px-3 font-semibold text-slate-800 focus:outline-none focus:ring-1 focus:ring-primary"
+              {/* Tab Selector */}
+              <div className="flex border-b text-xs font-semibold">
+                <button
+                  onClick={() => setActiveTab("details")}
+                  className={`flex-1 pb-2 border-b-2 transition ${
+                    activeTab === "details"
+                      ? "border-slate-900 text-slate-900 font-bold"
+                      : "border-transparent text-slate-400 hover:text-slate-600"
+                  }`}
                 >
-                  {leadStatuses.map((s) => (
-                    <option key={s} value={s}>{s}</option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Salesforce Core CRM: Assigned Consultant Selector */}
-              <div className="border-t pt-3 space-y-2">
-                <label className="text-[0.65rem] font-bold text-slate-400 uppercase tracking-wider">
-                  Assigned Property Consultant
-                </label>
-                <select
-                  value={selectedLead.assignedAgentId || ""}
-                  disabled={currentUser?.role === "agent"}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    handleUpdateLeadField(selectedLead.id, { assignedAgentId: val ? parseInt(val, 10) : null });
-                  }}
-                  className="w-full text-xs rounded-xl border-slate-200 h-9 bg-slate-50 hover:bg-slate-100 border px-3 font-semibold text-slate-800 focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-75 disabled:cursor-not-allowed"
+                  Details
+                </button>
+                <button
+                  onClick={() => setActiveTab("timeline")}
+                  className={`flex-1 pb-2 border-b-2 transition flex items-center justify-center gap-1.5 ${
+                    activeTab === "timeline"
+                      ? "border-slate-900 text-slate-900 font-bold"
+                      : "border-transparent text-slate-400 hover:text-slate-600"
+                  }`}
                 >
-                  <option value="">-- Select Agent --</option>
-                  {agents.map((a) => (
-                    <option key={a.id} value={a.id}>
-                      {a.name} ({a.role})
-                    </option>
-                  ))}
-                </select>
+                  <span>Activity Logs</span>
+                  {activities.length > 0 && (
+                    <span className="bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded-full text-[10px]">
+                      {activities.length}
+                    </span>
+                  )}
+                </button>
               </div>
 
-              {/* Intent Info Box */}
-              <div className="bg-slate-50/70 border rounded-2xl p-3.5 space-y-2.5">
-                <div>
-                  <p className="text-[0.6rem] font-bold text-slate-400 uppercase">Interest Type</p>
-                  <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full border text-[0.65rem] font-bold uppercase mt-1 ${getInterestBadgeColor(selectedLead.interestType)}`}>
-                    {getInterestIcon(selectedLead.interestType)}
-                    {selectedLead.interestType}
-                  </span>
-                </div>
+              {activeTab === "details" ? (
+                <div className="space-y-4">
+                  {/* General Contact Info */}
+                  <div className="space-y-2.5">
+                    <div className="flex items-start gap-2.5">
+                      <div className="h-7 w-7 rounded-lg bg-slate-50 border flex items-center justify-center text-slate-400">
+                        <User className="h-3.5 w-3.5" />
+                      </div>
+                      <div>
+                        <p className="text-[0.6rem] font-bold text-slate-400 uppercase">Full Name</p>
+                        <p className="text-xs font-bold text-slate-800">{selectedLead.name}</p>
+                      </div>
+                    </div>
 
-                {selectedLead.projectName && (
-                  <div>
-                    <p className="text-[0.6rem] font-bold text-slate-400 uppercase">Target Property</p>
-                    <p className="text-xs font-bold text-slate-800 flex items-center gap-1 mt-0.5">
-                      <Building className="h-3.5 w-3.5 text-primary" /> {selectedLead.projectName}
-                    </p>
+                    <div className="flex items-start gap-2.5">
+                      <div className="h-7 w-7 rounded-lg bg-slate-50 border flex items-center justify-center text-slate-400">
+                        <Mail className="h-3.5 w-3.5" />
+                      </div>
+                      <div>
+                        <p className="text-[0.6rem] font-bold text-slate-400 uppercase">Email Address</p>
+                        <p className="text-xs font-semibold text-slate-600">{selectedLead.email}</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start gap-2.5">
+                      <div className="h-7 w-7 rounded-lg bg-slate-50 border flex items-center justify-center text-slate-400">
+                        <Phone className="h-3.5 w-3.5" />
+                      </div>
+                      <div>
+                        <p className="text-[0.6rem] font-bold text-slate-400 uppercase">Phone Number</p>
+                        <p className="text-xs font-semibold text-slate-600">
+                          {selectedLead.phone || <span className="text-slate-400 italic">None Provided</span>}
+                        </p>
+                      </div>
+                    </div>
                   </div>
-                )}
 
-                <div className="grid grid-cols-2 gap-3 pt-1">
-                  {selectedLead.role && (
-                    <div>
-                      <p className="text-[0.6rem] font-bold text-slate-400 uppercase">Buyer Role</p>
-                      <p className="text-xs font-semibold text-slate-700 capitalize">{selectedLead.role}</p>
+                  {/* Salesforce Core CRM: Pipeline Status Control */}
+                  <div className="border-t pt-3 space-y-1.5">
+                    <label className="text-[0.65rem] font-bold text-slate-400 uppercase tracking-wider">
+                      Pipeline Status
+                    </label>
+                    <select
+                      value={selectedLead.status}
+                      onChange={(e) => handleUpdateLeadField(selectedLead.id, { status: e.target.value })}
+                      className="w-full text-xs rounded-xl border-slate-200 h-9 bg-slate-50 hover:bg-slate-100 border px-3 font-semibold text-slate-800 focus:outline-none focus:ring-1 focus:ring-primary"
+                    >
+                      {leadStatuses.map((s) => (
+                        <option key={s} value={s}>{s}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Deal Custom Value & Commission Fields (visible when Closed Won) */}
+                  {selectedLead.status === "Closed Won" && (
+                    <div className="border-t pt-3 grid grid-cols-2 gap-3 animate-fade-in">
+                      <div className="space-y-1">
+                        <label className="text-[0.65rem] font-bold text-slate-400 uppercase tracking-wider">
+                          Deal Value (AED)
+                        </label>
+                        <Input
+                          type="number"
+                          placeholder="e.g. 2500000"
+                          value={dealValueText}
+                          onChange={(e) => setDealValueText(e.target.value)}
+                          className="text-xs bg-slate-50 hover:bg-slate-100 rounded-xl h-9 border-slate-200"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[0.65rem] font-bold text-slate-400 uppercase tracking-wider">
+                          Commission %
+                        </label>
+                        <Input
+                          type="number"
+                          step="0.1"
+                          placeholder="e.g. 2.0"
+                          value={commissionRateText}
+                          onChange={(e) => setCommissionRateText(e.target.value)}
+                          className="text-xs bg-slate-50 hover:bg-slate-100 rounded-xl h-9 border-slate-200"
+                        />
+                      </div>
                     </div>
                   )}
-                  {selectedLead.funding && (
+
+                  {/* Salesforce Core CRM: Assigned Consultant Selector */}
+                  <div className="border-t pt-3 space-y-1.5">
+                    <label className="text-[0.65rem] font-bold text-slate-400 uppercase tracking-wider">
+                      Assigned Property Consultant
+                    </label>
+                    <select
+                      value={selectedLead.assignedAgentId || ""}
+                      disabled={currentUser?.role === "agent"}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        handleUpdateLeadField(selectedLead.id, { assignedAgentId: val ? parseInt(val, 10) : null });
+                      }}
+                      className="w-full text-xs rounded-xl border-slate-200 h-9 bg-slate-50 hover:bg-slate-100 border px-3 font-semibold text-slate-800 focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-75 disabled:cursor-not-allowed"
+                    >
+                      <option value="">-- Select Agent --</option>
+                      {agents.map((a) => (
+                        <option key={a.id} value={a.id}>
+                          {a.name} ({a.role})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Intent Info Box */}
+                  <div className="bg-slate-50/70 border rounded-2xl p-3 space-y-2">
                     <div>
-                      <p className="text-[0.6rem] font-bold text-slate-400 uppercase">Funding</p>
-                      <p className="text-xs font-semibold text-slate-700 capitalize">{selectedLead.funding}</p>
+                      <p className="text-[0.6rem] font-bold text-slate-400 uppercase">Interest Type</p>
+                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-[0.65rem] font-bold uppercase mt-1 ${getInterestBadgeColor(selectedLead.interestType)}`}>
+                        {getInterestIcon(selectedLead.interestType)}
+                        {selectedLead.interestType}
+                      </span>
+                    </div>
+
+                    {selectedLead.projectName && (
+                      <div>
+                        <p className="text-[0.6rem] font-bold text-slate-400 uppercase">Target Property</p>
+                        <p className="text-xs font-bold text-slate-800 flex items-center gap-1 mt-0.5">
+                          <Building className="h-3.5 w-3.5 text-primary" /> {selectedLead.projectName}
+                        </p>
+                      </div>
+                    )}
+
+                    <div className="grid grid-cols-2 gap-3 pt-1">
+                      <div>
+                        <p className="text-[0.6rem] font-bold text-slate-400 uppercase mb-1">Buyer Role</p>
+                        <select
+                          value={selectedLead.role || ""}
+                          onChange={(e) => handleUpdateLeadField(selectedLead.id, { role: e.target.value || null })}
+                          className="w-full text-[11px] rounded-lg border-slate-200 h-7 bg-white hover:bg-slate-50 border px-1.5 font-medium text-slate-700 focus:outline-none"
+                        >
+                          <option value="">Unspecified</option>
+                          <option value="investor">Investor</option>
+                          <option value="end-user">End-User</option>
+                        </select>
+                      </div>
+                      <div>
+                        <p className="text-[0.6rem] font-bold text-slate-400 uppercase mb-1">Funding</p>
+                        <select
+                          value={selectedLead.funding || ""}
+                          onChange={(e) => handleUpdateLeadField(selectedLead.id, { funding: e.target.value || null })}
+                          className="w-full text-[11px] rounded-lg border-slate-200 h-7 bg-white hover:bg-slate-50 border px-1.5 font-medium text-slate-700 focus:outline-none"
+                        >
+                          <option value="">Unspecified</option>
+                          <option value="cash">Cash</option>
+                          <option value="mortgage">Mortgage</option>
+                          <option value="installments">Installments</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Message */}
+                  {selectedLead.message && (
+                    <div className="space-y-1.5">
+                      <p className="text-[0.6rem] font-bold text-slate-400 uppercase flex items-center gap-1">
+                        <MessageSquare className="h-3 w-3" /> Inquiry Message
+                      </p>
+                      <div className="bg-blue-50/60 border border-blue-100 rounded-xl p-3 space-y-1">
+                        <p className="text-xs text-slate-700 leading-relaxed">
+                          {selectedLead.message}
+                        </p>
+                      </div>
                     </div>
                   )}
-                </div>
-              </div>
 
-              {/* Message */}
-              {selectedLead.message && (
-                <div className="space-y-1.5">
-                  <p className="text-[0.6rem] font-bold text-slate-400 uppercase flex items-center gap-1">
-                    <MessageSquare className="h-3 w-3" /> Inquiry Message
-                  </p>
-                  <div className="bg-blue-50/60 border border-blue-100 rounded-xl p-3.5 space-y-1">
-                    <p className="text-xs text-slate-700 leading-relaxed">
-                      {selectedLead.message}
+                  {/* No message fallback */}
+                  {!selectedLead.message && (
+                    <div className="bg-slate-50/70 border border-dashed border-slate-200 rounded-xl px-3 py-2.5">
+                      <p className="text-[0.65rem] text-slate-400 italic">No message provided with this inquiry.</p>
+                    </div>
+                  )}
+
+                  {/* Follow-Up / Internal Agent Notes */}
+                  <div className="border-t pt-3 space-y-2">
+                    <div className="flex justify-between items-center">
+                      <label className="text-[0.65rem] font-bold text-slate-400 uppercase tracking-wider">
+                        Internal Follow-Up Notes
+                      </label>
+                      <button
+                        onClick={handleSaveNotes}
+                        disabled={savingNotes}
+                        className="text-[0.65rem] text-primary hover:text-blue-800 font-bold uppercase transition"
+                      >
+                        {savingNotes ? "Saving..." : selectedLead.status === "Closed Won" ? "Save Deal & Notes" : "Save Note"}
+                      </button>
+                    </div>
+                    <textarea
+                      value={notesText}
+                      onChange={(e) => setNotesText(e.target.value)}
+                      placeholder="Record viewing feedback, negotiation offers, or next actions here..."
+                      className="w-full text-xs rounded-xl border-slate-200 p-2.5 bg-slate-50 hover:bg-slate-100 border h-20 focus:outline-none focus:ring-1 focus:ring-primary leading-normal resize-none"
+                    />
+                  </div>
+
+                  <div className="flex gap-2 pt-2">
+                    <Button
+                      variant="outline"
+                      className="flex-1 text-xs rounded-xl border-slate-200 hover:bg-slate-50 h-10"
+                      onClick={() => {
+                        handleLogAction(selectedLead.id, "EMAIL_SENT", "Drafted email to client");
+                        window.location.href = `mailto:${selectedLead.email}?subject=Chlonestone Real Estate Inquiry`;
+                      }}
+                    >
+                      Draft Email
+                    </Button>
+                    {selectedLead.phone && (
+                      <a
+                        href={`https://wa.me/${selectedLead.phone.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(
+                          `Hello ${selectedLead.name},\n\nThank you for your interest in Chlonestone Real Estate. I see you inquired about ${selectedLead.projectName || "our properties"} on our portal. Are you available for a quick chat?`
+                        )}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        onClick={() => {
+                          handleLogAction(selectedLead.id, "WHATSAPP_CLICKED", "Initiated WhatsApp chat from profile card");
+                        }}
+                        className="flex-1 inline-flex items-center justify-center gap-1.5 text-xs rounded-xl border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-semibold h-10"
+                      >
+                        <MessageSquare className="h-3.5 w-3.5" />
+                        WhatsApp
+                      </a>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                /* Timeline Tab content */
+                <div className="space-y-4 flex flex-col">
+                  {/* Add Note Form */}
+                  <div className="bg-slate-50 border rounded-2xl p-3 space-y-2">
+                    <p className="text-[0.65rem] font-bold text-slate-500 uppercase tracking-wider">
+                      Log Custom Agent Interaction
                     </p>
+                    <textarea
+                      value={newActivityContent}
+                      onChange={(e) => setNewActivityContent(e.target.value)}
+                      placeholder="e.g., Client requested the brochure, called to follow up..."
+                      className="w-full text-xs rounded-xl border-slate-200 p-2 bg-white border h-16 focus:outline-none focus:ring-1 focus:ring-primary leading-normal resize-none"
+                    />
+                    <div className="flex gap-2 justify-end">
+                      <Button
+                        size="sm"
+                        disabled={submittingActivity || !newActivityContent.trim()}
+                        onClick={() => handleAddActivity("NOTE")}
+                        className="text-[10px] font-bold h-7 px-3 rounded-lg bg-slate-900 hover:bg-slate-800 text-white"
+                      >
+                        {submittingActivity ? "Logging..." : "Log Note"}
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* List of Activities */}
+                  <div className="space-y-3 max-h-[300px] overflow-y-auto pr-1">
+                    {loadingActivities ? (
+                      <p className="text-center text-[11px] text-slate-400 py-4">Loading activity history...</p>
+                    ) : activities.length === 0 ? (
+                      <div className="text-center py-6">
+                        <Clock className="h-6 w-6 text-slate-300 mx-auto mb-1" />
+                        <p className="text-[11px] text-slate-400">No activities logged yet.</p>
+                      </div>
+                    ) : (
+                      <div className="relative border-l border-slate-100 pl-4 ml-2 space-y-4">
+                        {activities.map((act) => {
+                          // Determine icon and colors based on activity type
+                          let icon = <Clock className="h-3 w-3" />;
+                          let badgeStyle = "bg-slate-50 text-slate-600 border-slate-100";
+                          if (act.type === "NOTE") {
+                            icon = <FileText className="h-3 w-3" />;
+                            badgeStyle = "bg-amber-50 text-amber-700 border-amber-100";
+                          } else if (act.type === "STATUS_CHANGE") {
+                            icon = <History className="h-3 w-3" />;
+                            badgeStyle = "bg-blue-50 text-blue-700 border-blue-100";
+                          } else if (act.type === "EMAIL_SENT") {
+                            icon = <Mail className="h-3 w-3" />;
+                            badgeStyle = "bg-purple-50 text-purple-700 border-purple-100";
+                          } else if (act.type === "WHATSAPP_CLICKED") {
+                            icon = <MessageSquare className="h-3 w-3" />;
+                            badgeStyle = "bg-emerald-50 text-emerald-700 border-emerald-100";
+                          }
+
+                          return (
+                            <div key={act.id} className="relative">
+                              {/* Connector dot */}
+                              <span className={`absolute -left-[23px] top-1 flex h-4.5 w-4.5 items-center justify-center rounded-full border ${badgeStyle} shadow-sm`}>
+                                {icon}
+                              </span>
+                              <div className="space-y-0.5">
+                                <div className="flex justify-between items-start gap-1">
+                                  <span className="text-[10px] font-bold text-slate-800">
+                                    {act.type === "NOTE" ? `Note by ${act.agentName || "Agent"}` : act.type.replace("_", " ")}
+                                  </span>
+                                  <span className="text-[9px] text-slate-400 font-medium">
+                                    {new Date(act.createdAt).toLocaleDateString("en-US", {
+                                      month: "short",
+                                      day: "numeric",
+                                      hour: "2-digit",
+                                      minute: "2-digit"
+                                    })}
+                                  </span>
+                                </div>
+                                <p className="text-[11px] text-slate-600 leading-normal font-medium">
+                                  {act.content}
+                                </p>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
-
-              {/* No message fallback */}
-              {!selectedLead.message && (
-                <div className="bg-slate-50/70 border border-dashed border-slate-200 rounded-xl px-3 py-2.5">
-                  <p className="text-[0.65rem] text-slate-400 italic">No message provided with this inquiry.</p>
-                </div>
-              )}
-
-              {/* Follow-Up / Internal Agent Notes */}
-              <div className="border-t pt-3 space-y-2">
-                <div className="flex justify-between items-center">
-                  <label className="text-[0.65rem] font-bold text-slate-400 uppercase tracking-wider">
-                    Internal Follow-Up Notes
-                  </label>
-                  <button
-                    onClick={handleSaveNotes}
-                    disabled={savingNotes}
-                    className="text-[0.65rem] text-primary hover:text-blue-800 font-bold uppercase transition"
-                  >
-                    {savingNotes ? "Saving..." : "Save Note"}
-                  </button>
-                </div>
-                <textarea
-                  value={notesText}
-                  onChange={(e) => setNotesText(e.target.value)}
-                  placeholder="Record viewing feedback, negotiation offers, or next actions here..."
-                  className="w-full text-xs rounded-xl border-slate-200 p-2.5 bg-slate-50 hover:bg-slate-100 border h-20 focus:outline-none focus:ring-1 focus:ring-primary leading-normal resize-none"
-                />
-              </div>
-
-              <Button
-                variant="outline"
-                className="w-full text-xs rounded-xl border-slate-200 hover:bg-slate-50"
-                onClick={() => {
-                  window.location.href = `mailto:${selectedLead.email}?subject=Chlonestone Real Estate Inquiry`;
-                }}
-              >
-                Draft Email Response
-              </Button>
             </div>
           ) : (
             <div className="my-auto text-center space-y-2">

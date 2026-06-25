@@ -463,7 +463,7 @@ export default function ServicesPage() {
             <p className="text-xs text-slate-500 max-w-sm mx-auto">
               Our experts can help review developers and source primary launch allocation inventory.
             </p>
-            <Link href="tel:+971526238780">
+            <Link href="tel:+971503483366">
               <Button className="rounded-xl px-6 bg-[#111827] text-white mt-2">Connect with Advisor</Button>
             </Link>
           </section>

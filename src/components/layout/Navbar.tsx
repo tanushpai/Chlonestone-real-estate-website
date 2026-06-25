@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { Menu, Heart, LogOut, ChevronDown, LayoutDashboard } from "lucide-react";
+import { Menu, Heart, LogOut, ChevronDown, LayoutDashboard, Calculator } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -55,6 +55,26 @@ export default function Navbar() {
     }
   };
 
+  const handleToolsClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    const stored = localStorage.getItem("chlonestone_user");
+    if (!stored) {
+      window.dispatchEvent(
+        new CustomEvent("open-auth-lead-capture", {
+          detail: {
+            interestType: "investment-tools",
+            projectName: "Navbar Investment Tools",
+            onSuccess: () => {
+              window.dispatchEvent(new Event("open-tools-sidebar"));
+            }
+          },
+        })
+      );
+    } else {
+      window.dispatchEvent(new Event("open-tools-sidebar"));
+    }
+  };
+
   const handleSignInClick = () => {
     window.dispatchEvent(
       new CustomEvent("open-auth-lead-capture", {
@@ -72,7 +92,7 @@ export default function Navbar() {
     window.dispatchEvent(new Event("auth-state-change"));
   };
 
-  const whatsappUrl = "https://wa.me/971526238780?text=Hello!%20I%20would%20like%20to%20contact%20you%20about%20real%20estate%20services.";
+  const whatsappUrl = "https://wa.me/971503483366?text=Hello!%20I%20would%20like%20to%20contact%20you%20about%20real%20estate%20services.";
 
   const links = [
     { name: "Projects", href: "/projects" },
@@ -114,6 +134,10 @@ export default function Navbar() {
         <div className="hidden md:flex items-center gap-4">
           <Button variant="ghost" size="icon" onClick={handleWishlistClick} aria-label="Wishlist">
             <Heart className="h-5 w-5" />
+          </Button>
+
+          <Button variant="ghost" size="icon" onClick={handleToolsClick} aria-label="Investment Calculators" title="Investment Calculators">
+            <Calculator className="h-5 w-5" />
           </Button>
 
           {user ? (
@@ -198,6 +222,10 @@ export default function Navbar() {
             <Heart className="h-5 w-5" />
           </Button>
 
+          <Button variant="ghost" size="icon" onClick={handleToolsClick} aria-label="Investment Calculators">
+            <Calculator className="h-5 w-5" />
+          </Button>
+
           <Sheet>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon">
@@ -216,6 +244,13 @@ export default function Navbar() {
                     {link.name}
                   </Link>
                 ))}
+
+                <button
+                  onClick={handleToolsClick}
+                  className="text-lg font-medium text-left focus:outline-none"
+                >
+                  Investment Tools
+                </button>
 
                 {user ? (
                   <div className="flex flex-col gap-3 mt-4 border-t pt-4">

@@ -42,7 +42,7 @@ export default async function DeveloperDetailsPage({ params }: PageProps) {
   }));
 
   // Find matches
-  let developerProjects: any[] = allProjects.filter(
+  const developerProjects: any[] = allProjects.filter(
     (p) => slugify(p.developer) === slug || (dbDev && p.developer.trim().toLowerCase() === dbDev.name.trim().toLowerCase())
   );
 

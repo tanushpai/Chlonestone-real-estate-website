@@ -74,6 +74,19 @@ model Lead {
   createdAt       DateTime @default(now())
   resetToken      String?
   resetExpires    DateTime?
+  activities      LeadActivity[]
+  dealValue       Float?
+  commissionRate  Float?   @default(2.0)
+}
+
+model LeadActivity {
+  id        Int      @id @default(autoincrement())
+  leadId    Int
+  lead      Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  type      String   // 'NOTE' | 'STATUS_CHANGE' | 'EMAIL_SENT' | 'WHATSAPP_CLICKED' | 'CREATION'
+  content   String
+  agentName String?
+  createdAt DateTime @default(now())
 }
 
 model Developer {

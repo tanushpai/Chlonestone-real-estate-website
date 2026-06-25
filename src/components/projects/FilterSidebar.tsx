@@ -34,15 +34,12 @@ interface FilterSidebarProps {
   
   paymentPlan: string;
   setPaymentPlan: (val: string) => void;
-  selectedAmenities: string[];
-  setSelectedAmenities: (val: string[]) => void;
   
   communitiesList: string[];
   developersList: string[];
   propertyTypesList: string[];
   handoverTimelineOptions: string[];
   paymentPlanOptions: string[];
-  allAmenitiesList: string[];
 }
 
 export default function FilterSidebar({
@@ -68,14 +65,11 @@ export default function FilterSidebar({
   
   paymentPlan,
   setPaymentPlan,
-  selectedAmenities,
-  setSelectedAmenities,
   communitiesList,
   developersList,
   propertyTypesList,
   handoverTimelineOptions,
   paymentPlanOptions,
-  allAmenitiesList,
 }: FilterSidebarProps) {
   return (
     <div className="rounded-[2rem] border border-border bg-white p-5 shadow-soft space-y-6">
@@ -267,40 +261,6 @@ export default function FilterSidebar({
             />
           </div>
         </div>
-
-        {/* Amenities Selection Toggle Tags */}
-        {allAmenitiesList.length > 0 && (
-          <div className="space-y-2">
-            <label className="text-[0.65rem] font-bold uppercase tracking-wider text-slate-400">
-              Amenities Included
-            </label>
-            <div className="flex flex-wrap gap-1.5 max-h-36 overflow-y-auto pb-1">
-              {allAmenitiesList.map((amenity) => {
-                const isSelected = selectedAmenities.includes(amenity);
-                return (
-                  <button
-                    key={amenity}
-                    type="button"
-                    onClick={() => {
-                      if (isSelected) {
-                        setSelectedAmenities(selectedAmenities.filter((a) => a !== amenity));
-                      } else {
-                        setSelectedAmenities([...selectedAmenities, amenity]);
-                      }
-                    }}
-                    className={`rounded-lg border px-2.5 py-1 text-[10px] font-semibold transition ${
-                      isSelected
-                        ? "bg-primary text-white border-primary"
-                        : "bg-slate-50 border-slate-100 text-slate-650 hover:border-slate-350"
-                    }`}
-                  >
-                    {amenity}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
 
         {/* Reset button */}
         <Button

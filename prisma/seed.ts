@@ -35,7 +35,7 @@ async function main() {
 
   const adminEmail = (process.env.ADMIN_EMAIL || "info@chlonestone.com").toLowerCase();
   const adminName = process.env.ADMIN_NAME || "ADMIN";
-  const adminPhone = process.env.ADMIN_PHONE || "+971526238780";
+  const adminPhone = process.env.ADMIN_PHONE || "+971503483366";
   const defaultPassword = process.env.ADMIN_PASSWORD || "admin123";
   const hashedPassword = await bcrypt.hash(defaultPassword, 10);
 

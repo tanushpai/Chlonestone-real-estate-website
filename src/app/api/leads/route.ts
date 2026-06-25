@@ -90,21 +90,73 @@ export async function POST(request: Request) {
       }
     }
 
-    const lead = await prisma.lead.create({
-      data: {
-        name: body.name,
-        email: body.email.toLowerCase(),
-        phone: body.phone || null,
-        password: hashedPassword,
-        interestType: body.interestType || "contact",
-        role: body.role || null,
-        funding: body.funding || null,
-        timeframe: body.timeframe || null,
-        message: body.message || null,
-        projectName: body.projectName || null,
-        assignedAgentId: assignedAgentId,
+    const existingLead = await prisma.lead.findFirst({
+      where: {
+        email: {
+          equals: body.email.toLowerCase(),
+          mode: "insensitive",
+        },
       },
     });
+
+    let lead;
+    if (existingLead) {
+      const updatedData: any = {};
+      if (body.name) updatedData.name = body.name;
+      if (body.phone) updatedData.phone = body.phone;
+      if (hashedPassword) updatedData.password = hashedPassword;
+      if (body.interestType) updatedData.interestType = body.interestType;
+      if (body.role) updatedData.role = body.role;
+      if (body.funding) updatedData.funding = body.funding;
+      if (body.timeframe) updatedData.timeframe = body.timeframe;
+      if (body.message) updatedData.message = body.message;
+      if (body.projectName) updatedData.projectName = body.projectName;
+
+      if (existingLead.status === "Lost") {
+        updatedData.status = "New";
+      }
+
+      if (!existingLead.assignedAgentId && assignedAgentId) {
+        updatedData.assignedAgentId = assignedAgentId;
+      }
+
+      lead = await prisma.lead.update({
+        where: { id: existingLead.id },
+        data: updatedData,
+      });
+
+      await prisma.leadActivity.create({
+        data: {
+          leadId: lead.id,
+          type: "FORM_SUBMISSION",
+          content: `Re-engaged: Submitted form for ${body.interestType || "contact"} regarding ${body.projectName || "general inquiry"}. Message: ${body.message || "N/A"}`,
+        },
+      });
+    } else {
+      lead = await prisma.lead.create({
+        data: {
+          name: body.name,
+          email: body.email.toLowerCase(),
+          phone: body.phone || null,
+          password: hashedPassword,
+          interestType: body.interestType || "contact",
+          role: body.role || null,
+          funding: body.funding || null,
+          timeframe: body.timeframe || null,
+          message: body.message || null,
+          projectName: body.projectName || null,
+          assignedAgentId: assignedAgentId,
+        },
+      });
+
+      await prisma.leadActivity.create({
+        data: {
+          leadId: lead.id,
+          type: "CREATION",
+          content: `Created: Submitted form for ${body.interestType || "contact"} regarding ${body.projectName || "general advisory"}.`,
+        },
+      });
+    }
 
     // Send notifications
     try {

@@ -1,7 +1,7 @@
 import React from "react";
 
 export default function WhatsAppButton() {
-  const whatsappNumber = "971526238780"; // Dubai placeholder number
+  const whatsappNumber = "971503483366"; // Dubai placeholder number
   const message = encodeURIComponent("Hello! I am interested in off-plan real estate listings.");
   const url = `https://wa.me/${whatsappNumber}?text=${message}`;
 
