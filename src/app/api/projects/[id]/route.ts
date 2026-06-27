@@ -93,6 +93,9 @@ export async function PUT(
         brochureUrl: body.brochureUrl !== undefined ? body.brochureUrl : existingProject.brochureUrl,
         floorPlanUrl: body.floorPlanUrl !== undefined ? body.floorPlanUrl : existingProject.floorPlanUrl,
         qrCodeUrl: body.qrCodeUrl !== undefined ? body.qrCodeUrl : existingProject.qrCodeUrl,
+        showAmenities: body.showAmenities !== undefined ? body.showAmenities : existingProject.showAmenities,
+        showNearbyLocations: body.showNearbyLocations !== undefined ? body.showNearbyLocations : existingProject.showNearbyLocations,
+        showUnitMix: body.showUnitMix !== undefined ? body.showUnitMix : existingProject.showUnitMix,
       },
     });
 

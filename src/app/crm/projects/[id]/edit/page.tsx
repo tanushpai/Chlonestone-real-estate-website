@@ -43,6 +43,13 @@ export default function CrmEditProjectPage({
   const [floorPlanUploading, setFloorPlanUploading] = useState(false);
   const [qrCodeUploading, setQrCodeUploading] = useState(false);
 
+  // New customizable fields
+  const [paymentPlan, setPaymentPlan] = useState("");
+  const [totalUnits, setTotalUnits] = useState("");
+  const [showAmenities, setShowAmenities] = useState(true);
+  const [showNearbyLocations, setShowNearbyLocations] = useState(true);
+  const [showUnitMix, setShowUnitMix] = useState(true);
+
   const handleQrCodeUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -167,6 +174,11 @@ export default function CrmEditProjectPage({
         setBrochureUrl((project as any).brochureUrl || "");
         setFloorPlanUrl((project as any).floorPlanUrl || "");
         setQrCodeUrl((project as any).qrCodeUrl || "");
+        setPaymentPlan(project.paymentPlan || "");
+        setTotalUnits(project.totalUnits || "");
+        setShowAmenities((project as any).showAmenities !== undefined ? (project as any).showAmenities : true);
+        setShowNearbyLocations((project as any).showNearbyLocations !== undefined ? (project as any).showNearbyLocations : true);
+        setShowUnitMix((project as any).showUnitMix !== undefined ? (project as any).showUnitMix : true);
 
         // Dynamic properties
         setAmenities(project.amenities as string[] || []);
@@ -344,7 +356,12 @@ export default function CrmEditProjectPage({
       developerProfile: devProfile,
       brochureUrl: brochureUrl || null,
       floorPlanUrl: floorPlanUrl || null,
-      qrCodeUrl: qrCodeUrl || null
+      qrCodeUrl: qrCodeUrl || null,
+      paymentPlan,
+      totalUnits,
+      showAmenities,
+      showNearbyLocations,
+      showUnitMix
     };
 
     try {
@@ -518,6 +535,61 @@ export default function CrmEditProjectPage({
                 value={escrowNumber}
                 onChange={(e) => setEscrowNumber(e.target.value)}
               />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-slate-700">Payment Plan (Ratio / Structure, e.g. 80/20)</label>
+              <Input
+                type="text"
+                placeholder="e.g. 80/20"
+                value={paymentPlan}
+                onChange={(e) => setPaymentPlan(e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-slate-700">Total Size (Units count, e.g. 240 Units)</label>
+              <Input
+                type="text"
+                placeholder="e.g. 240 Units"
+                value={totalUnits}
+                onChange={(e) => setTotalUnits(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div className="bg-slate-50 border border-slate-100 p-4 rounded-2xl space-y-3">
+            <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider">Frontend Sections Visibility</h4>
+            <div className="flex flex-wrap gap-6 text-xs font-semibold text-slate-750">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={showAmenities}
+                  onChange={(e) => setShowAmenities(e.target.checked)}
+                  className="rounded text-primary focus:ring-primary h-4 w-4"
+                />
+                Show Property Amenities
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={showNearbyLocations}
+                  onChange={(e) => setShowNearbyLocations(e.target.checked)}
+                  className="rounded text-primary focus:ring-primary h-4 w-4"
+                />
+                Show Nearby Locations
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={showUnitMix}
+                  onChange={(e) => setShowUnitMix(e.target.checked)}
+                  className="rounded text-primary focus:ring-primary h-4 w-4"
+                />
+                Show Unit Mix & Pricing
+              </label>
             </div>
           </div>
 

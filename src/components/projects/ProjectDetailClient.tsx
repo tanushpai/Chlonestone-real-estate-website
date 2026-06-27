@@ -342,7 +342,7 @@ export default function ProjectDetailClient({ project }: ProjectDetailClientProp
             alt={`${project.name} gallery image`}
             fill
             priority
-            className="object-cover transition-all duration-700 hover:scale-[1.02]"
+            className="object-contain bg-[#0B0C1E] transition-all duration-700 hover:scale-[1.02]"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-slate-950/40 via-transparent to-transparent pointer-events-none" />
           
@@ -481,91 +481,97 @@ export default function ProjectDetailClient({ project }: ProjectDetailClientProp
           </section>
 
           {/* Amenities Grid */}
-          <section className="space-y-6">
-            <h2 className="text-2xl font-bold font-heading text-slate-900">
-              Property Amenities
-            </h2>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-              {project.amenities.map((amenity, idx) => (
-                <div 
-                  key={idx} 
-                  className="flex items-center gap-3 p-4 rounded-2xl bg-white border border-border shadow-sm hover:shadow-md hover:border-primary/50 transition duration-300"
-                >
-                  <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-secondary text-primary flex-shrink-0">
-                    <Check className="h-4 w-4" />
+          {(project as any).showAmenities !== false && project.amenities && project.amenities.length > 0 && (
+            <section className="space-y-6">
+              <h2 className="text-2xl font-bold font-heading text-slate-900">
+                Property Amenities
+              </h2>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                {project.amenities.map((amenity, idx) => (
+                  <div 
+                    key={idx} 
+                    className="flex items-center gap-3 p-4 rounded-2xl bg-white border border-border shadow-sm hover:shadow-md hover:border-primary/50 transition duration-300"
+                  >
+                    <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-secondary text-primary flex-shrink-0">
+                      <Check className="h-4 w-4" />
+                    </div>
+                    <span className="text-xs sm:text-sm font-semibold text-slate-800">{amenity}</span>
                   </div>
-                  <span className="text-xs sm:text-sm font-semibold text-slate-800">{amenity}</span>
-                </div>
-              ))}
-            </div>
-          </section>
+                ))}
+              </div>
+            </section>
+          )}
 
           {/* Nearby Locations */}
-          <section className="space-y-6">
-            <h2 className="text-2xl font-bold font-heading text-slate-900">
-              Nearby Locations
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {project.locationHighlights.map((hl, idx) => (
-                <div 
-                  key={idx}
-                  className="flex justify-between items-center p-3.5 bg-slate-50 border border-border rounded-xl"
-                >
-                  <div className="flex items-center gap-2.5">
-                    <MapPin className="h-4 w-4 text-primary" />
-                    <span className="text-sm font-semibold text-slate-800">{hl.landmark}</span>
+          {(project as any).showNearbyLocations !== false && project.locationHighlights && project.locationHighlights.length > 0 && (
+            <section className="space-y-6">
+              <h2 className="text-2xl font-bold font-heading text-slate-900">
+                Nearby Locations
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {project.locationHighlights.map((hl, idx) => (
+                  <div 
+                    key={idx}
+                    className="flex justify-between items-center p-3.5 bg-slate-50 border border-border rounded-xl"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <MapPin className="h-4 w-4 text-primary" />
+                      <span className="text-sm font-semibold text-slate-800">{hl.landmark}</span>
+                    </div>
+                    <span className="text-xs font-bold text-slate-500 rounded-full bg-slate-100 px-3 py-1">
+                      {hl.driveTime}
+                    </span>
                   </div>
-                  <span className="text-xs font-bold text-slate-500 rounded-full bg-slate-100 px-3 py-1">
-                    {hl.driveTime}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </section>
+                ))}
+              </div>
+            </section>
+          )}
 
           {/* Unit Mix Table Section */}
-          <section id="unit-mix-section" className="space-y-6">
-            <h2 className="text-2xl font-bold font-heading text-slate-900">
-              Unit Mix & Pricing
-            </h2>
-            <div className="overflow-hidden rounded-2xl border border-border shadow-sm">
-              <Table>
-                <TableHeader className="bg-slate-50">
-                  <TableRow>
-                    <TableHead className="font-semibold text-slate-800">Unit Type</TableHead>
-                    <TableHead className="font-semibold text-slate-800">Size Range</TableHead>
-                    <TableHead className="font-semibold text-slate-800">Starting Price</TableHead>
-                    <TableHead className="font-semibold text-slate-800">Availability</TableHead>
-                    <TableHead className="text-right font-semibold text-slate-800">Action</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {project.unitMix.map((mix, idx) => (
-                    <TableRow key={idx} className="hover:bg-slate-50/50 transition">
-                      <TableCell className="font-semibold text-slate-900">{mix.beds}</TableCell>
-                      <TableCell className="text-slate-600">{mix.sqftRange}</TableCell>
-                      <TableCell className="font-semibold text-slate-950">{mix.priceRange}</TableCell>
-                      <TableCell>
-                        <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-800 border border-amber-200">
-                          {mix.availability} units left
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleInquiryShortcut(mix.beds)}
-                          className="text-primary hover:text-amber-800 hover:bg-secondary text-xs font-semibold"
-                        >
-                          Inquire
-                        </Button>
-                      </TableCell>
+          {(project as any).showUnitMix !== false && project.unitMix && project.unitMix.length > 0 && (
+            <section id="unit-mix-section" className="space-y-6">
+              <h2 className="text-2xl font-bold font-heading text-slate-900">
+                Unit Mix & Pricing
+              </h2>
+              <div className="overflow-hidden rounded-2xl border border-border shadow-sm">
+                <Table>
+                  <TableHeader className="bg-slate-50">
+                    <TableRow>
+                      <TableHead className="font-semibold text-slate-800">Unit Type</TableHead>
+                      <TableHead className="font-semibold text-slate-800">Size Range</TableHead>
+                      <TableHead className="font-semibold text-slate-800">Starting Price</TableHead>
+                      <TableHead className="font-semibold text-slate-800">Availability</TableHead>
+                      <TableHead className="text-right font-semibold text-slate-800">Action</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          </section>
+                  </TableHeader>
+                  <TableBody>
+                    {project.unitMix.map((mix, idx) => (
+                      <TableRow key={idx} className="hover:bg-slate-50/50 transition">
+                        <TableCell className="font-semibold text-slate-900">{mix.beds}</TableCell>
+                        <TableCell className="text-slate-600">{mix.sqftRange}</TableCell>
+                        <TableCell className="font-semibold text-slate-950">{mix.priceRange}</TableCell>
+                        <TableCell>
+                          <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-800 border border-amber-200">
+                            {mix.availability} units left
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleInquiryShortcut(mix.beds)}
+                            className="text-primary hover:text-amber-800 hover:bg-secondary text-xs font-semibold"
+                          >
+                            Inquire
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </section>
+          )}
 
           {/* Developer Details */}
           <section className="rounded-2xl border border-border bg-slate-50 p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">

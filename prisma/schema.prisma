@@ -53,6 +53,9 @@ model Project {
   brochureUrl        String?
   floorPlanUrl       String?
   qrCodeUrl          String?
+  showAmenities      Boolean    @default(true)
+  showNearbyLocations Boolean   @default(true)
+  showUnitMix        Boolean    @default(true)
 
   @@index([communityId])
   @@index([developer])

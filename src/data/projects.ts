@@ -52,6 +52,9 @@ export interface Project {
   brochureUrl?: string | null;
   floorPlanUrl?: string | null;
   qrCodeUrl?: string | null;
+  showAmenities?: boolean;
+  showNearbyLocations?: boolean;
+  showUnitMix?: boolean;
   agent?: {
     id: number;
     name: string;

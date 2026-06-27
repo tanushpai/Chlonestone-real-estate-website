@@ -17,46 +17,37 @@ export default function CrmNewProjectPage() {
   const [developer, setDeveloper] = useState("Emaar");
   const [community, setCommunity] = useState("Downtown Dubai");
   const [propertyType, setPropertyType] = useState("Apartment");
-  const [startingPrice, setStartingPrice] = useState("AED 1,900,000");
-  const [handover, setHandover] = useState("Q2 2028");
+  const [startingPrice, setStartingPrice] = useState("");
+  const [handover, setHandover] = useState("");
   const [escrowNumber, setEscrowNumber] = useState("");
-  const [reraPermit, setReraPermit] = useState("RERA-8472918");
+  const [reraPermit, setReraPermit] = useState("");
   const [description, setDescription] = useState("");
   const [address, setAddress] = useState("");
   const [thumbnailImage, setThumbnailImage] = useState("");
-  const [imagesList, setImagesList] = useState<string[]>([
-    "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00",
-    "https://images.unsplash.com/photo-1464146072230-91cabc968266"
-  ]);
+  const [imagesList, setImagesList] = useState<string[]>([]);
   const [newImageUrl, setNewImageUrl] = useState("");
   const [isSuccess, setIsSuccess] = useState(false);
 
   // Specifications
-  const [amenities, setAmenities] = useState<string[]>([
-    "Swimming Pool",
-    "Modern Fitness Center",
-    "Lush Landscaped Parks",
-    "24/7 Security"
-  ]);
+  const [amenities, setAmenities] = useState<string[]>([]);
   const [newAmenity, setNewAmenity] = useState("");
 
-
-
-  const [locationHighlights, setLocationHighlights] = useState<{ landmark: string; driveTime: string }[]>([
-    { landmark: "Burj Khalifa", driveTime: "10 mins" },
-    { landmark: "DXB Airport", driveTime: "18 mins" }
-  ]);
+  const [locationHighlights, setLocationHighlights] = useState<{ landmark: string; driveTime: string }[]>([]);
   const [newLandmark, setNewLandmark] = useState("");
   const [newDriveTime, setNewDriveTime] = useState("");
 
-  const [unitMix, setUnitMix] = useState<{ beds: string; sqftRange: string; priceRange: string; availability: number }[]>([
-    { beds: "1 Bedroom", sqftRange: "720 - 850 SqFt", priceRange: "AED 1.9M", availability: 12 },
-    { beds: "2 Bedrooms", sqftRange: "1,150 - 1,300 SqFt", priceRange: "AED 3.2M", availability: 6 }
-  ]);
+  const [unitMix, setUnitMix] = useState<{ beds: string; sqftRange: string; priceRange: string; availability: number }[]>([]);
   const [newUnitBeds, setNewUnitBeds] = useState("1 Bedroom");
   const [newUnitSqft, setNewUnitSqft] = useState("");
   const [newUnitPrice, setNewUnitPrice] = useState("");
   const [newUnitAvailability, setNewUnitAvailability] = useState("");
+
+  // New customizable fields
+  const [paymentPlan, setPaymentPlan] = useState("80/20");
+  const [totalUnits, setTotalUnits] = useState("");
+  const [showAmenities, setShowAmenities] = useState(true);
+  const [showNearbyLocations, setShowNearbyLocations] = useState(true);
+  const [showUnitMix, setShowUnitMix] = useState(true);
 
   // Developer Profile
   const [devProfileName, setDevProfileName] = useState("");
@@ -300,14 +291,14 @@ export default function CrmNewProjectPage() {
       propertyType,
       startingPrice,
       handover,
-      paymentPlan: "80/20",
+      paymentPlan: paymentPlan || "80/20",
       image: thumbnailImage || "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00",
       images: imagesList,
       description,
       address: address || null,
       reraPermit,
       escrowNumber: escrowNumber || null,
-      totalUnits: "240 Units",
+      totalUnits: totalUnits || "240 Units",
       coordinates: { lat: 25.1972, lng: 55.2744 },
       paymentPlanDetails: [
         { milestone: "On Booking", percentage: 10 },
@@ -321,7 +312,10 @@ export default function CrmNewProjectPage() {
       developerProfile: devProfile,
       brochureUrl: brochureUrl || null,
       floorPlanUrl: floorPlanUrl || null,
-      qrCodeUrl: qrCodeUrl || null
+      qrCodeUrl: qrCodeUrl || null,
+      showAmenities,
+      showNearbyLocations,
+      showUnitMix
     };
 
     try {
@@ -492,6 +486,61 @@ export default function CrmNewProjectPage() {
                 value={escrowNumber}
                 onChange={(e) => setEscrowNumber(e.target.value)}
               />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-slate-700">Payment Plan (Ratio / Structure, e.g. 80/20)</label>
+              <Input
+                type="text"
+                placeholder="e.g. 80/20"
+                value={paymentPlan}
+                onChange={(e) => setPaymentPlan(e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-slate-700">Total Size (Units count, e.g. 240 Units)</label>
+              <Input
+                type="text"
+                placeholder="e.g. 240 Units"
+                value={totalUnits}
+                onChange={(e) => setTotalUnits(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div className="bg-slate-50 border border-slate-100 p-4 rounded-2xl space-y-3">
+            <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider">Frontend Sections Visibility</h4>
+            <div className="flex flex-wrap gap-6 text-xs font-semibold text-slate-750">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={showAmenities}
+                  onChange={(e) => setShowAmenities(e.target.checked)}
+                  className="rounded text-primary focus:ring-primary h-4 w-4"
+                />
+                Show Property Amenities
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={showNearbyLocations}
+                  onChange={(e) => setShowNearbyLocations(e.target.checked)}
+                  className="rounded text-primary focus:ring-primary h-4 w-4"
+                />
+                Show Nearby Locations
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={showUnitMix}
+                  onChange={(e) => setShowUnitMix(e.target.checked)}
+                  className="rounded text-primary focus:ring-primary h-4 w-4"
+                />
+                Show Unit Mix & Pricing
+              </label>
             </div>
           </div>
 

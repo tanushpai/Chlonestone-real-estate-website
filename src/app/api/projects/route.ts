@@ -63,6 +63,9 @@ export async function POST(request: Request) {
         brochureUrl: body.brochureUrl || null,
         floorPlanUrl: body.floorPlanUrl || null,
         qrCodeUrl: body.qrCodeUrl || null,
+        showAmenities: body.showAmenities !== undefined ? body.showAmenities : true,
+        showNearbyLocations: body.showNearbyLocations !== undefined ? body.showNearbyLocations : true,
+        showUnitMix: body.showUnitMix !== undefined ? body.showUnitMix : true,
       },
     });
 
