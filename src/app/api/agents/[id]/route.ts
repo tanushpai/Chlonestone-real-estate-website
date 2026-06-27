@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import bcrypt from "bcryptjs";
+import { deleteFile } from "@/lib/storage";
 
 export async function PUT(
   request: Request,
@@ -44,8 +45,21 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
+    const agentId = parseInt(id, 10);
+
+    const agentToDelete = await prisma.agent.findUnique({
+      where: { id: agentId },
+    });
+
+    if (!agentToDelete) {
+      return NextResponse.json({ error: "Agent not found" }, { status: 404 });
+    }
+
+    // Delete photo from local uploads or Supabase Storage
+    await deleteFile(agentToDelete.photoUrl);
+
     await prisma.agent.delete({
-      where: { id: parseInt(id, 10) },
+      where: { id: agentId },
     });
     return NextResponse.json({ success: true });
   } catch (error: any) {

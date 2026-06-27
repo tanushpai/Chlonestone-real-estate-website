@@ -137,9 +137,13 @@ export default function AboutPage() {
               <Link href="/projects">
                 <Button className="rounded-xl px-5 bg-[#111827] text-white">Explore Projects</Button>
               </Link>
-              <Link href="tel:+971503483366">
+              <a 
+                href="https://wa.me/971503483366?text=Hello!%20I%20would%20like%20to%20contact%20you%20about%20real%20estate%20services." 
+                target="_blank" 
+                rel="noopener noreferrer"
+              >
                 <Button variant="outline" className="rounded-xl px-5 bg-white">Talk to Specialist</Button>
-              </Link>
+              </a>
             </div>
           </section>
 

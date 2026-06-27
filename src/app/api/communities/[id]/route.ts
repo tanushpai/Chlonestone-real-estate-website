@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { deleteFile } from "@/lib/storage";
 
 export async function GET(
   request: Request,
@@ -86,6 +87,9 @@ export async function DELETE(
     if (!communityToDelete) {
       return NextResponse.json({ error: "Community not found" }, { status: 404 });
     }
+
+    // Delete cover image from local uploads or Supabase Storage
+    await deleteFile(communityToDelete.image);
 
     await prisma.community.delete({
       where: { id: communityToDelete.id },

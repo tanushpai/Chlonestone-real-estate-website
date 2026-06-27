@@ -53,6 +53,10 @@ model Project {
   brochureUrl        String?
   floorPlanUrl       String?
   qrCodeUrl          String?
+
+  @@index([communityId])
+  @@index([developer])
+  @@index([agentId])
 }
 
 model Lead {
@@ -77,6 +81,10 @@ model Lead {
   activities      LeadActivity[]
   dealValue       Float?
   commissionRate  Float?   @default(2.0)
+
+  @@index([email])
+  @@index([status])
+  @@index([assignedAgentId])
 }
 
 model LeadActivity {

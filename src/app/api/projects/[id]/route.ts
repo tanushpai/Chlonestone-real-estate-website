@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { deleteFile } from "@/lib/storage";
 
 export async function GET(
   request: Request,
@@ -119,6 +120,20 @@ export async function DELETE(
 
     if (!projectToDelete) {
       return NextResponse.json({ error: "Project not found" }, { status: 404 });
+    }
+
+    // Delete associated assets from local uploads or Supabase Storage
+    await deleteFile(projectToDelete.image);
+    await deleteFile(projectToDelete.brochureUrl);
+    await deleteFile(projectToDelete.floorPlanUrl);
+    await deleteFile(projectToDelete.qrCodeUrl);
+
+    if (projectToDelete.images && Array.isArray(projectToDelete.images)) {
+      for (const img of projectToDelete.images) {
+        if (typeof img === "string") {
+          await deleteFile(img);
+        }
+      }
     }
 
     await prisma.project.delete({

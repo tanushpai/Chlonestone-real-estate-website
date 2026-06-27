@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { deleteFile } from "@/lib/storage";
 
 export async function GET(
   request: Request,
@@ -81,6 +82,9 @@ export async function DELETE(
     if (!devToDelete) {
       return NextResponse.json({ error: "Developer not found" }, { status: 404 });
     }
+
+    // Delete logo image from local uploads or Supabase Storage
+    await deleteFile(devToDelete.logoUrl);
 
     await prisma.developer.delete({
       where: { id: devToDelete.id },

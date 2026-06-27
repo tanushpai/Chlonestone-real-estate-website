@@ -218,80 +218,13 @@ export async function POST(request: Request) {
         </div>
       `;
 
-      // Email Admins
-      for (const email of adminEmails) {
-        await sendEmail({ to: email, subject, text, html });
-      }
-
-      // Email assigned agent if not already in adminEmails list
-      if (agentEmail && !adminEmails.has(agentEmail.toLowerCase())) {
+      // Email assigned agent if present; otherwise fallback to admins so lead is not lost
+      if (agentEmail) {
         await sendEmail({ to: agentEmail, subject, text, html });
-      }
-
-      // Email customer copy (Confirmation or Guide delivery)
-      try {
-        const settings = await prisma.setting.findUnique({ where: { id: 1 } });
-        const liveGuideUrl = settings?.guideUrl || "/uploads/dubai-off-plan-investor-guide-2026.pdf";
-        const targetGuideLink = liveGuideUrl.startsWith("http")
-          ? liveGuideUrl
-          : `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}${liveGuideUrl}`;
-
-        let clientSubject = "";
-        let clientText = "";
-        
-        if (lead.interestType === "guide") {
-          const rawSubject = settings?.guideSubject || "Download: Dubai Off-Plan Investor Guide 2026";
-          const rawBody = settings?.guideBody || "Thank you for requesting the Dubai Off-Plan Investor Guide 2026. You can download the booklet directly using this link: {{GUIDE_URL}}";
-          
-          clientSubject = rawSubject
-            .replace(/{{CLIENT_NAME}}/g, lead.name)
-            .replace(/{{PROJECT_NAME}}/g, lead.projectName || "Dubai Off-Plan Investor Guide 2026")
-            .replace(/{{GUIDE_URL}}/g, targetGuideLink);
-
-          clientText = rawBody
-            .replace(/{{CLIENT_NAME}}/g, lead.name)
-            .replace(/{{PROJECT_NAME}}/g, lead.projectName || "Dubai Off-Plan Investor Guide 2026")
-            .replace(/{{GUIDE_URL}}/g, targetGuideLink);
-        } else {
-          const rawSubject = settings?.inquirySubject || "Thank you for contacting Chlonestone Real Estate";
-          const rawBody = settings?.inquiryBody || 'Hello {{CLIENT_NAME}},\n\nThank you for reaching out to Chlonestone. We have received your inquiry regarding "{{PROJECT_NAME}}" and one of our premier real estate advisors will connect with you shortly.';
-
-          clientSubject = rawSubject
-            .replace(/{{CLIENT_NAME}}/g, lead.name)
-            .replace(/{{PROJECT_NAME}}/g, lead.projectName || "general advisory")
-            .replace(/{{GUIDE_URL}}/g, targetGuideLink);
-
-          clientText = rawBody
-            .replace(/{{CLIENT_NAME}}/g, lead.name)
-            .replace(/{{PROJECT_NAME}}/g, lead.projectName || "general advisory")
-            .replace(/{{GUIDE_URL}}/g, targetGuideLink);
+      } else {
+        for (const email of adminEmails) {
+          await sendEmail({ to: email, subject, text, html });
         }
-
-        const clientHtml = `
-          <div style="font-family: sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px; background-color: #ffffff;">
-            <div style="text-align: center; margin-bottom: 20px; border-bottom: 1px solid #f1f5f9; padding-bottom: 20px;">
-              <h2 style="color: #0f172a; margin: 0; font-family: serif; font-size: 24px;">Chlonestone</h2>
-              <p style="color: #64748b; font-size: 10px; text-transform: uppercase; tracking: 0.1em; margin: 4px 0 0 0;">Premier Real Estate Advisory</p>
-            </div>
-            <div style="color: #334155; font-size: 14px; line-height: 1.7; white-space: pre-line;">
-              ${clientText}
-            </div>
-            ${lead.interestType === "guide" ? `
-              <div style="margin: 30px 0; text-align: center;">
-                <a href="${targetGuideLink}" style="background-color: #0f172a; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: bold; display: inline-block;">Download Booklet PDF</a>
-              </div>
-            ` : ""}
-            <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 30px 0;" />
-            <p style="color: #64748b; font-size: 12px; line-height: 1.6; text-align: center;">
-              This is an automated verification receipt.<br/>
-              <strong>Chlonestone Real Estate</strong> | Dubai, United Arab Emirates
-            </p>
-          </div>
-        `;
-
-        await sendEmail({ to: lead.email, subject: clientSubject, text: clientText, html: clientHtml });
-      } catch (clientEmailErr) {
-        console.error("Failed to send customer confirmation email:", clientEmailErr);
       }
     } catch (emailErr) {
       console.error("Failed to send lead notification emails:", emailErr);

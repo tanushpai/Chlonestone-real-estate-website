@@ -11,7 +11,8 @@ import {
   Download, 
   Check, 
   Send,
-  Sparkles 
+  Sparkles,
+  Calculator
 } from "lucide-react";
 import Navbar from "@/components/layout/Navbar";
 import Hero from "@/components/home/Hero";
@@ -28,6 +29,26 @@ export default function Home() {
   const [isGuideSubmitting, setIsGuideSubmitting] = useState(false);
   const [isGuideDownloaded, setIsGuideDownloaded] = useState(false);
   const [guideUrl, setGuideUrl] = useState("");
+
+  const handleOpenTools = (e: React.MouseEvent) => {
+    e.preventDefault();
+    const stored = localStorage.getItem("chlonestone_user");
+    if (!stored) {
+      window.dispatchEvent(
+        new CustomEvent("open-auth-lead-capture", {
+          detail: {
+            interestType: "homepage-tools",
+            projectName: "Homepage Calculators Banner",
+            onSuccess: () => {
+              window.dispatchEvent(new Event("open-tools-sidebar"));
+            }
+          },
+        })
+      );
+    } else {
+      window.dispatchEvent(new Event("open-tools-sidebar"));
+    }
+  };
 
   useEffect(() => {
     // Read from database API service to include newly CRM-added projects
@@ -179,31 +200,71 @@ export default function Home() {
         </section>
 
         {/* Trending Launches Section */}
-        <section className="mx-auto max-w-7xl px-6 py-16 sm:py-24 border-t">
-          <div className="flex flex-col sm:flex-row justify-between sm:items-end mb-10 gap-4">
-            <div>
-              <span className="text-xs font-bold uppercase tracking-widest text-primary">
-                New Releases
-              </span>
-              <h2 className="text-3xl font-bold font-heading text-slate-900 sm:text-4xl mt-1">
-                Trending Off-Plan launches
-              </h2>
-              <p className="text-sm text-slate-500 mt-2">
-                Explore hot pre-construction opportunities from Dubai's master developers.
-              </p>
+        <section className="bg-[#0B0C1E] text-white py-16 sm:py-24 border-t border-slate-900">
+          <div className="mx-auto max-w-7xl px-6">
+            <div className="flex flex-col sm:flex-row justify-between sm:items-end mb-10 gap-4">
+              <div>
+                <span className="text-xs font-bold uppercase tracking-widest text-blue-400">
+                  New Releases
+                </span>
+                <h2 className="text-3xl font-bold font-heading text-white sm:text-4xl mt-1">
+                  Trending Off-Plan launches
+                </h2>
+                <p className="text-sm text-slate-400 mt-2">
+                  Explore hot pre-construction opportunities from Dubai's master developers.
+                </p>
+              </div>
+              <Link 
+                href="/projects" 
+                className="text-sm font-bold text-blue-400 hover:text-blue-300 transition"
+              >
+                View all listings
+              </Link>
             </div>
-            <Link 
-              href="/projects" 
-              className="text-sm font-bold text-primary hover:text-blue-800 transition"
-            >
-              View all listings
-            </Link>
-          </div>
 
-          <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-            {trendingProjects.map((project) => (
-              <ProjectCard key={project.id} project={project} />
-            ))}
+            <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+              {trendingProjects.map((project) => (
+                <ProjectCard key={project.id} project={project} />
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Interactive Calculators Section */}
+        <section className="bg-[#0B0C1E] text-white py-16 sm:py-20 border-t border-slate-900">
+          <div className="mx-auto max-w-7xl px-6">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+              <div className="lg:col-span-7 space-y-6">
+                <span className="text-xs font-bold uppercase tracking-widest text-primary bg-primary/10 px-3 py-1.5 rounded-full text-blue-400">
+                  Investor Sandbox
+                </span>
+                <h2 className="text-3xl font-extrabold tracking-tight sm:text-4xl font-heading text-white">
+                  Free Dubai Real Estate ROI & Mortgage Planner
+                </h2>
+                <p className="text-sm text-slate-350 leading-relaxed max-w-xl">
+                  Analyze property investments on-the-fly. Run quick computations for monthly mortgage payments or estimate your Gross/Net yields on off-plan projects in under 10 seconds.
+                </p>
+                <div className="flex flex-col sm:flex-row gap-4 pt-2">
+                  <Button 
+                    onClick={handleOpenTools}
+                    className="bg-primary hover:bg-blue-600 text-white font-bold rounded-xl px-6 py-5 text-sm h-auto flex items-center gap-2 border-0 shadow-lg shadow-blue-500/25"
+                  >
+                    <Calculator className="h-4 w-4" />
+                    Open Financial Sandbox
+                  </Button>
+                </div>
+              </div>
+              <div className="lg:col-span-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="p-6 bg-slate-950/40 border border-slate-800 rounded-3xl space-y-3">
+                  <div className="font-bold text-lg font-heading text-blue-400">Mortgage Estimator</div>
+                  <p className="text-xs text-slate-450 leading-relaxed">Estimate interest payments, loan tenures, and monthly installments instantly.</p>
+                </div>
+                <div className="p-6 bg-slate-950/40 border border-slate-800 rounded-3xl space-y-3">
+                  <div className="font-bold text-lg font-heading text-blue-400">Rental Yield Calculator</div>
+                  <p className="text-xs text-slate-450 leading-relaxed">Calculate gross and net annual returns based on service charges and average rent.</p>
+                </div>
+              </div>
+            </div>
           </div>
         </section>
 
